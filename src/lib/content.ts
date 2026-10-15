@@ -140,9 +140,10 @@ export interface RouteSummary {
   stops: Array<{ name: string; lat: number; lng: number; description?: string }>;
 }
 
-function routeSlug(id: string): string {
-  // El glob loader conserva la extensión en el id: "rocky-mountains.en.mdx"
-  return id.replace(/\.(en|fr)\.mdx$/, "").replace(/\.mdx$/, "");
+export function routeSlug(id: string): string {
+  // Astro 5 (ADR-019): el id conserva el locale sin extensión —
+  // "rocky-mountains.fr". También tolera el formato legacy ".fr.mdx".
+  return id.replace(/\.(en|fr)(\.mdx)?$/, "").replace(/\.mdx$/, "");
 }
 
 export async function getRoutes(locale: Locale): Promise<RouteSummary[]> {

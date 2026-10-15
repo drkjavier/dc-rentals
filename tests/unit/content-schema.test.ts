@@ -85,8 +85,13 @@ describe("vehicle content entries", () => {
 });
 
 describe("faq content entries", () => {
-  const faqItems = (readJson(join("faq", "faq.json")) as unknown[]).map((item) =>
-    faqSchema.parse(item)
+  // Nota ADR-019 (Astro 5): el glob loader requiere un objeto JSON por
+  // archivo, así que faq.json (array) se dividió en faq/<id>.<locale>.json.
+  const faqFiles = readdirSync(join(CONTENT_DIR, "faq")).filter((f) =>
+    f.endsWith(".json")
+  );
+  const faqItems = faqFiles.map((f) =>
+    faqSchema.parse(readJson(join("faq", f)))
   );
 
   it("every entry validates against the schema", () => {

@@ -1,0 +1,8 @@
+{
+  "id": "faq-insurance",
+  "locale": "fr",
+  "category": "insurance",
+  "question": "L'assurance est-elle obligatoire ?",
+  "answer": "Oui. L'assurance est facturée par jour (25 CAD/jour par défaut) et apparaît dans chaque calcul de prix. Les détails de la couverture sont inclus dans le contrat de location.",
+  "sortOrder": 8
+}

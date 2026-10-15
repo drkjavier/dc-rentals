@@ -1,0 +1,8 @@
+{
+  "id": "faq-pets",
+  "locale": "fr",
+  "category": "pets",
+  "question": "Puis-je voyager avec mon animal ?",
+  "answer": "Oui, sur les unités marquées « animaux acceptés ». Des frais de nettoyage peuvent s'appliquer. Indiquez-nous votre animal lors de l'envoi de la demande de réservation.",
+  "sortOrder": 9
+}

@@ -1,0 +1,8 @@
+{
+  "id": "faq-cancellation",
+  "locale": "en",
+  "category": "policies",
+  "question": "What is the cancellation policy?",
+  "answer": "30+ days before pickup: full refund minus the non-refundable deposit. 15-29 days: 50% of the total. 7-14 days: 75%. Less than 7 days or no-show: no refund.",
+  "sortOrder": 6
+}

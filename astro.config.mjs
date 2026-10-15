@@ -7,11 +7,16 @@ import { defineConfig } from "astro/config";
 import react from "@astrojs/react";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
-import vercel from "@astrojs/vercel/serverless";
+// Nota ADR-019 (upgrade Astro 5 + @astrojs/vercel@9): en v9 el adaptador
+// serverless se importa desde "@astrojs/vercel" (el subpath /serverless está
+// deprecado). El adaptador emite runtime nodejs22.x — aceptado por Vercel.
+import vercel from "@astrojs/vercel";
 
 export default defineConfig({
   site: "https://dc-rentals.ca",
-  output: "hybrid", // SSG por defecto + server endpoints (prerender = false)
+  // Nota ADR-019 (upgrade Astro 5): `output: "hybrid"` fue eliminado — su
+  // comportamiento es ahora el default `'static'`. Las rutas con
+  // `export const prerender = false` (endpoints API) siguen serverless igual.
   adapter: vercel(),
   integrations: [
     react(), // Islands interactivos (React)

@@ -1,0 +1,8 @@
+{
+  "id": "faq-pets",
+  "locale": "en",
+  "category": "pets",
+  "question": "Can I travel with my pet?",
+  "answer": "Yes, on units marked pet friendly. A pet cleaning fee may apply. Please tell us about your pet when you send the reservation request.",
+  "sortOrder": 9
+}

@@ -1,0 +1,8 @@
+{
+  "id": "faq-cancellation",
+  "locale": "fr",
+  "category": "policies",
+  "question": "Quelle est la politique d'annulation ?",
+  "answer": "30 jours ou plus avant le départ : remboursement intégral moins l'acompte non remboursable. 15 à 29 jours : 50 % du total. 7 à 14 jours : 75 %. Moins de 7 jours ou absence : aucun remboursement.",
+  "sortOrder": 6
+}

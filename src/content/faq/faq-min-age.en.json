@@ -1,0 +1,8 @@
+{
+  "id": "faq-min-age",
+  "locale": "en",
+  "category": "license",
+  "question": "Is there a minimum driver age?",
+  "answer": "Yes — drivers must be at least 21 years old and hold a valid licence for the vehicle class. Drivers under 25 may be subject to a young-driver surcharge.",
+  "sortOrder": 4
+}

@@ -1,0 +1,8 @@
+{
+  "id": "faq-deposit",
+  "locale": "fr",
+  "category": "booking",
+  "question": "Dois-je payer en ligne au moment de réserver ?",
+  "answer": "Non. Les réservations MVP sont des demandes sans paiement en ligne. Envoyez votre demande et nous confirmons la disponibilité sous 24 heures. Un acompte est demandé après confirmation, et la caution est payée au départ.",
+  "sortOrder": 1
+}

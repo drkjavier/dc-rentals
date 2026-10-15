@@ -1,0 +1,8 @@
+{
+  "id": "faq-min-age",
+  "locale": "fr",
+  "category": "license",
+  "question": "Y a-t-il un âge minimum pour le conducteur ?",
+  "answer": "Oui — les conducteurs doivent avoir au moins 21 ans et posséder un permis valide pour la classe de véhicule. Les conducteurs de moins de 25 ans peuvent être assujettis à un supplément jeune conducteur.",
+  "sortOrder": 4
+}

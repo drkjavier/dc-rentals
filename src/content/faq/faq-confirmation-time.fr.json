@@ -1,0 +1,8 @@
+{
+  "id": "faq-confirmation-time",
+  "locale": "fr",
+  "category": "booking",
+  "question": "Sous quel délai ma réservation est-elle confirmée ?",
+  "answer": "Nous confirmons chaque demande sous 24 heures par courriel. Vous recevez une confirmation avec le contrat de location et les instructions de retrait.",
+  "sortOrder": 2
+}

@@ -1,0 +1,8 @@
+{
+  "id": "faq-fuel",
+  "locale": "fr",
+  "category": "policies",
+  "question": "Comment fonctionne le carburant ?",
+  "answer": "Le carburant fonctionne selon le principe plein/plein : vous récupérez le camping-car avec le réservoir plein et le rendez-vous plein. Les niveaux de propane du générateur et de la batterie sont vérifiés au retour.",
+  "sortOrder": 7
+}

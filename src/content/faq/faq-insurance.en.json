@@ -1,0 +1,8 @@
+{
+  "id": "faq-insurance",
+  "locale": "en",
+  "category": "insurance",
+  "question": "Is insurance mandatory?",
+  "answer": "Yes. Insurance is charged per day ($25 CAD/day by default) and is itemized in every price breakdown. Coverage details are included in the rental agreement.",
+  "sortOrder": 8
+}

@@ -1,0 +1,8 @@
+{
+  "id": "faq-included",
+  "locale": "fr",
+  "category": "included",
+  "question": "Qu'est-ce qui est inclus dans la location ?",
+  "answer": "Le tarif par nuit comprend le véhicule, l'équipement de cuisine, la literie (sauf si vous choisissez le kit de literie en extra), le kit d'assistance routière et les kilomètres de votre forfait. Le propane, les heures de générateur (4 h/jour) et l'assurance sont détaillés dans le calcul du prix.",
+  "sortOrder": 5
+}

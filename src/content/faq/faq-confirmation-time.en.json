@@ -1,0 +1,8 @@
+{
+  "id": "faq-confirmation-time",
+  "locale": "en",
+  "category": "booking",
+  "question": "How long until my reservation is confirmed?",
+  "answer": "We confirm every request within 24 hours by email. You receive a confirmation with the rental agreement and pickup instructions.",
+  "sortOrder": 2
+}

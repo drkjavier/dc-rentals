@@ -1,0 +1,8 @@
+{
+  "id": "faq-fuel",
+  "locale": "en",
+  "category": "policies",
+  "question": "How does fuel work?",
+  "answer": "Fuel is full-to-full: pick up the RV with a full tank and return it full. Generator propane and battery levels are checked at return.",
+  "sortOrder": 7
+}

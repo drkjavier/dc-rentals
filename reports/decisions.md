@@ -46,3 +46,16 @@
 
 - **Fecha**: 2026-10-15
 - **Decisión**: Todas las imágenes del MVP son placeholders SVG generados por `scripts/generate-placeholders.mjs` (convención §13.2, sufijo `.svg`). Las fotos reales se sustituyen en `public/images/` sin tocar código (mismas rutas).
+
+## ADR-019: Upgrade Astro 4.16 → 5.18 + @astrojs/vercel 7 → 9 (runtime Vercel)
+
+- **Fecha**: 2026-10-14
+- **Decisión**: Migrar a `astro@^5.18.2` y `@astrojs/vercel@^9.0.5` (también `@astrojs/mdx@^4`, `@astrojs/react@^4`).
+- **Contexto**: Vercel eliminó `nodejs18.x` (2025-09) y `nodejs20.x` (2026-10-01) como runtimes válidos para despliegues nuevos. `@astrojs/vercel@7.x` solo conoce Node 18/20 y emitía `"runtime": "nodejs18.x"` en `.vc-config.json`, causando `The following Serverless Functions contain an invalid "runtime"`. Solo `@astrojs/vercel@9.x` emite `nodejs22.x`, y requiere Astro 5.
+- **Cambios derivados**:
+  - `output: "hybrid"` eliminado de `astro.config.mjs` (fusionado con `'static'` en Astro 5; `prerender = false` sigue funcionando).
+  - Import del adaptador: `@astrojs/vercel` (el subpath `/serverless` está deprecado).
+  - `src/content/faq/faq.json` (array) dividido en `faq/<id>.<locale>.json` (el glob loader de Astro 5 espera un objeto por archivo).
+  - `generateId` fijado en los loaders glob para conservar ids estilo Astro 4 (`rocky-mountains.fr`), ya que el default slugificaba (`rocky-mountainsfr`).
+  - `routeSlug()` exportada y tolerante al id sin extensión.
+- **Verificación**: build OK con `.vc-config.json` → `"runtime": "nodejs22.x"`; 93 tests unitarios OK; `astro check` 0 errores; eslint limpio.

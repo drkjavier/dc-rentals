@@ -1,0 +1,8 @@
+{
+  "id": "faq-deposit",
+  "locale": "en",
+  "category": "booking",
+  "question": "Do I pay online when I reserve?",
+  "answer": "No. MVP reservations are requests without online payment. Send your request and we confirm availability within 24 hours. A deposit is collected only after we confirm, and the security deposit is paid at pickup.",
+  "sortOrder": 1
+}
