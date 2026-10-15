@@ -1,0 +1,13 @@
+{
+  "brandName": "DC Rentals",
+  "logo": {
+    "type": "icon",
+    "icon": "van",
+    "image": null,
+    "backgroundColor": "#1E40AF"
+  },
+  "hero": {
+    "image": "/images/hero/hero-rv.svg",
+    "overlayOpacity": 60
+  }
+}

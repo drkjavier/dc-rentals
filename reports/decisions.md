@@ -59,3 +59,20 @@
   - `generateId` fijado en los loaders glob para conservar ids estilo Astro 4 (`rocky-mountains.fr`), ya que el default slugificaba (`rocky-mountainsfr`).
   - `routeSlug()` exportada y tolerante al id sin extensión.
 - **Verificación**: build OK con `.vc-config.json` → `"runtime": "nodejs22.x"`; 93 tests unitarios OK; `astro check` 0 errores; eslint limpio.
+
+## ADR-020: Panel de administración de contenido (trucks, rutas, branding)
+
+- **Fecha**: 2026-10-15
+- **Decisión**: Panel web autenticado en `/admin` (Astro server + island React) que edita trucks (Content Collections JSON), rutas (MDX con frontmatter) y config visual central (`src/config/site-config.json`: brandName, logo, imagen hero). Los cambios se publican **commiteando directo a la rama main** del repo desplegado mediante la GitHub Contents API; Vercel detecta el push y redespliega a producción (~30 s).
+- **Razón**: el sitio es SSG — no hay base de datos de contenido que editar en runtime. En lugar de migrar trucks/rutas a Supabase (contravierte ADR-003 y sería una migración mayor), el panel usa GitHub como backend de almacenamiento, manteniendo Content Collections como fuente de verdad.
+- **Seguridad**:
+  - Auth por token compartido `ADMIN_TOKEN` (env var), comparado con `crypto.timingSafeEqual` (timing-safe). Token solo en `sessionStorage` del browser.
+  - `GITHUB_TOKEN`/`GITHUB_REPO`/`GITHUB_BRANCH` son env vars **server-only** (nunca `PUBLIC_*`); el browser solo ve los endpoints `/api/admin/*`.
+  - Todos los endpoints validan con Zod **antes** de commitear (400 + sin commit si falla).
+  - Subida de imágenes limitada a 1 MB (límite Contents API) y con allowlist de extensiones; path saneado contra traversal.
+  - Página `/admin` con `noindex,nofollow`.
+- **Endpooints**: `GET/PUT /api/admin/site-config`, `GET/POST /api/admin/vehicles`, `GET/PUT/DELETE(405) /api/admin/vehicles/[code]`, `GET /api/admin/routes`, `GET/PUT /api/admin/routes/[slug]`, `POST /api/admin/upload`.
+- **Config central**: `src/lib/site-config.ts` (schema Zod + `getSiteConfig()`); header/footer/hero ahora lo consumen en vez de valores hardcoded. El logo usa un catálogo de iconos SVG inline (van/mountain/compass/map) o una imagen subida.
+- **Borrado físico de trucks no soportado a propósito**: se ocultan con `active=false` para no romper enlaces ni perder historial.
+- **Known limitations**: sin rate limiting ni 2FA (mitigable con un proxy/Cloudflare Access); sin upload de imágenes >1 MB; el commit va directo a main (no usa PRs).
+- **Verificación**: build OK (`nodejs22.x`), 117 tests OK, `astro check` 0 errores, eslint limpio.

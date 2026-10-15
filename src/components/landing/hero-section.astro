@@ -2,6 +2,7 @@
 // src/components/landing/hero-section.astro — SDD §6.1 Landing (Hero)
 import Button from "@/components/ui/button.astro";
 import { t, localizedPath, type Locale } from "@/lib/i18n";
+import { getSiteConfig } from "@/lib/site-config";
 
 interface Props {
   locale: Locale;
@@ -9,16 +10,18 @@ interface Props {
 }
 
 const { locale, availableCount } = Astro.props;
+const { hero } = getSiteConfig();
 ---
 
 <section class="relative overflow-hidden bg-neutral-900" aria-label="Hero">
   <img
-    src="/images/hero/hero-rv.svg"
+    src={hero.image}
     alt=""
     width="1920"
     height="1080"
     fetchpriority="high"
-    class="absolute inset-0 h-full w-full object-cover opacity-60"
+    class="absolute inset-0 h-full w-full object-cover"
+    style={`opacity: ${hero.overlayOpacity / 100}`}
   />
   <div class="relative bg-gradient-to-r from-neutral-900/90 via-neutral-900/60 to-transparent">
     <div class="container-page flex min-h-[560px] flex-col justify-center py-20 lg:py-28">
