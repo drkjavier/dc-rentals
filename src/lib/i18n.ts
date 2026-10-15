@@ -68,3 +68,34 @@ export function localeFromPath(pathname: string): Locale | null {
 export function homePath(locale: Locale): string {
   return `/${locale}`;
 }
+
+export function alternateLocale(locale: Locale): Locale {
+  return locale === "en" ? "fr" : "en";
+}
+
+const FR_SEGMENTS: Record<string, string> = {
+  vehicles: "vehicules",
+  routes: "itineraires",
+};
+const EN_SEGMENTS: Record<string, string> = Object.fromEntries(
+  Object.entries(FR_SEGMENTS).map(([en, fr]) => [fr, en])
+);
+
+/**
+ * Devuelve la misma ruta en el idioma opuesto, traduciendo los segmentos
+ * localizados (vehicles↔vehicules, routes↔itineraires).
+ * Ej: /en/vehicles/x → /fr/vehicules/x ; /fr/faq → /en/faq
+ */
+export function swapLocalePath(pathname: string): string | null {
+  const match = pathname.match(/^\/(en|fr)(\/.*)?$/);
+  if (!match) return null;
+  const current = match[1] as Locale;
+  const rest = match[2] ?? "/";
+  const target = alternateLocale(current);
+  const segments = rest.split("/");
+  const seg = segments[1];
+  if (target === "fr" && FR_SEGMENTS[seg]) segments[1] = FR_SEGMENTS[seg];
+  if (target === "en" && EN_SEGMENTS[seg]) segments[1] = EN_SEGMENTS[seg];
+  const joined = segments.join("/");
+  return joined === "/" ? `/${target}` : `/${target}${joined}`;
+}

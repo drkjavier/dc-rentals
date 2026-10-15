@@ -1,0 +1,24 @@
+---
+// src/components/ui/badge.astro — SDD §6.2 + §11.4 (badge de estado pill)
+import { cn } from "@/lib/utils";
+
+interface Props {
+  tone?: "available" | "occupied" | "maintenance" | "partial" | "upcoming" | "neutral";
+  class?: string;
+}
+
+const { tone = "neutral", class: className } = Astro.props;
+
+const tones = {
+  available: "bg-status-available/10 text-status-available",
+  occupied: "bg-status-occupied/10 text-status-occupied",
+  maintenance: "bg-status-maintenance/10 text-status-maintenance",
+  partial: "bg-status-partial/10 text-status-partial",
+  upcoming: "bg-status-upcoming/10 text-status-upcoming",
+  neutral: "bg-neutral-100 text-neutral-700",
+} as const;
+---
+
+<span class={cn("status-badge", tones[tone], className)}>
+  <slot />
+</span>

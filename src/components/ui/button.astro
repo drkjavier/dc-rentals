@@ -1,0 +1,63 @@
+---
+// src/components/ui/button.astro — SDD §6.2 (componente base, cero JS)
+import { cn } from "@/lib/utils";
+
+interface Props {
+  href?: string;
+  variant?: "primary" | "secondary" | "accent" | "outline" | "ghost";
+  size?: "sm" | "md" | "lg";
+  type?: "button" | "submit";
+  disabled?: boolean;
+  class?: string;
+  ariaLabel?: string;
+}
+
+const {
+  href,
+  variant = "primary",
+  size = "md",
+  type = "button",
+  disabled = false,
+  class: className,
+  ariaLabel,
+} = Astro.props;
+
+const variants = {
+  primary:
+    "bg-brand-primary text-white hover:bg-blue-800 shadow-sm",
+  secondary:
+    "bg-brand-secondary text-white hover:bg-emerald-700 shadow-sm",
+  accent:
+    "bg-brand-accent text-white hover:bg-amber-700 shadow-sm",
+  outline:
+    "border-2 border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white",
+  ghost: "text-brand-primary hover:bg-blue-50",
+} as const;
+
+const sizes = {
+  sm: "px-3 py-1.5 text-sm",
+  md: "px-5 py-2.5 text-sm",
+  lg: "px-7 py-3 text-base",
+} as const;
+
+const classes = cn(
+  "inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors duration-150 ease-smooth",
+  "focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2",
+  "disabled:cursor-not-allowed disabled:opacity-50",
+  variants[variant],
+  sizes[size],
+  className
+);
+---
+
+{
+  href ? (
+    <a href={href} class={classes} aria-label={ariaLabel}>
+      <slot />
+    </a>
+  ) : (
+    <button type={type} class={classes} disabled={disabled} aria-label={ariaLabel}>
+      <slot />
+    </button>
+  )
+}

@@ -1,0 +1,27 @@
+---
+// src/components/ui/select.astro — SDD §6.2
+import { cn } from "@/lib/utils";
+
+interface Props {
+  id: string;
+  name: string;
+  label: string;
+  options: Array<{ value: string; label: string }>;
+  required?: boolean;
+  class?: string;
+}
+
+const { id, name, label, options, required = false, class: className } = Astro.props;
+---
+
+<div class={cn("flex flex-col gap-1", className)}>
+  <label for={id} class="text-sm font-medium text-neutral-700">{label}</label>
+  <select
+    id={id}
+    name={name}
+    required={required}
+    class="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:border-brand-primary"
+  >
+    {options.map((opt) => <option value={opt.value}>{opt.label}</option>)}
+  </select>
+</div>

@@ -1,0 +1,146 @@
+[
+  {
+    "id": "faq-deposit",
+    "locale": "en",
+    "category": "booking",
+    "question": "Do I pay online when I reserve?",
+    "answer": "No. MVP reservations are requests without online payment. Send your request and we confirm availability within 24 hours. A deposit is collected only after we confirm, and the security deposit is paid at pickup.",
+    "sortOrder": 1
+  },
+  {
+    "id": "faq-deposit",
+    "locale": "fr",
+    "category": "booking",
+    "question": "Dois-je payer en ligne au moment de réserver ?",
+    "answer": "Non. Les réservations MVP sont des demandes sans paiement en ligne. Envoyez votre demande et nous confirmons la disponibilité sous 24 heures. Un acompte est demandé après confirmation, et la caution est payée au départ.",
+    "sortOrder": 1
+  },
+  {
+    "id": "faq-confirmation-time",
+    "locale": "en",
+    "category": "booking",
+    "question": "How long until my reservation is confirmed?",
+    "answer": "We confirm every request within 24 hours by email. You receive a confirmation with the rental agreement and pickup instructions.",
+    "sortOrder": 2
+  },
+  {
+    "id": "faq-confirmation-time",
+    "locale": "fr",
+    "category": "booking",
+    "question": "Sous quel délai ma réservation est-elle confirmée ?",
+    "answer": "Nous confirmons chaque demande sous 24 heures par courriel. Vous recevez une confirmation avec le contrat de location et les instructions de retrait.",
+    "sortOrder": 2
+  },
+  {
+    "id": "faq-license",
+    "locale": "en",
+    "category": "license",
+    "question": "What licence do I need to drive an RV in Canada?",
+    "answer": "A standard Class 5 licence (Class G in Ontario) covers motorhomes up to the GVWR of our fleet. Travel trailers behind a half-ton pickup are covered by the same licence. International visitors need a valid home licence plus an International Driving Permit.",
+    "sortOrder": 3
+  },
+  {
+    "id": "faq-license",
+    "locale": "fr",
+    "category": "license",
+    "question": "Quel permis faut-il pour conduire un camping-car au Canada ?",
+    "answer": "Un permis de conduire de classe 5 standard (classe G en Ontario) couvre les camping-cars jusqu'au PBRV de notre flotte. Les remolques derrière une demi-tonneau sont couverts par le même permis. Les visiteurs internationaux doivent présenter un permis valide de leur pays plus un permis international.",
+    "sortOrder": 3
+  },
+  {
+    "id": "faq-min-age",
+    "locale": "en",
+    "category": "license",
+    "question": "Is there a minimum driver age?",
+    "answer": "Yes — drivers must be at least 21 years old and hold a valid licence for the vehicle class. Drivers under 25 may be subject to a young-driver surcharge.",
+    "sortOrder": 4
+  },
+  {
+    "id": "faq-min-age",
+    "locale": "fr",
+    "category": "license",
+    "question": "Y a-t-il un âge minimum pour le conducteur ?",
+    "answer": "Oui — les conducteurs doivent avoir au moins 21 ans et posséder un permis valide pour la classe de véhicule. Les conducteurs de moins de 25 ans peuvent être assujettis à un supplément jeune conducteur.",
+    "sortOrder": 4
+  },
+  {
+    "id": "faq-included",
+    "locale": "en",
+    "category": "included",
+    "question": "What is included in the rental?",
+    "answer": "The nightly rate includes the vehicle, kitchen equipment, bedding (unless you choose the linen kit extra), roadside assistance kit, and the kilometres in your chosen package. Propane, generator hours (4 h/day), and insurance are itemized in the price breakdown.",
+    "sortOrder": 5
+  },
+  {
+    "id": "faq-included",
+    "locale": "fr",
+    "category": "included",
+    "question": "Qu'est-ce qui est inclus dans la location ?",
+    "answer": "Le tarif par nuit comprend le véhicule, l'équipement de cuisine, la literie (sauf si vous choisissez le kit de literie en extra), le kit d'assistance routière et les kilomètres de votre forfait. Le propane, les heures de générateur (4 h/jour) et l'assurance sont détaillés dans le calcul du prix.",
+    "sortOrder": 5
+  },
+  {
+    "id": "faq-cancellation",
+    "locale": "en",
+    "category": "policies",
+    "question": "What is the cancellation policy?",
+    "answer": "30+ days before pickup: full refund minus the non-refundable deposit. 15-29 days: 50% of the total. 7-14 days: 75%. Less than 7 days or no-show: no refund.",
+    "sortOrder": 6
+  },
+  {
+    "id": "faq-cancellation",
+    "locale": "fr",
+    "category": "policies",
+    "question": "Quelle est la politique d'annulation ?",
+    "answer": "30 jours ou plus avant le départ : remboursement intégral moins l'acompte non remboursable. 15 à 29 jours : 50 % du total. 7 à 14 jours : 75 %. Moins de 7 jours ou absence : aucun remboursement.",
+    "sortOrder": 6
+  },
+  {
+    "id": "faq-fuel",
+    "locale": "en",
+    "category": "policies",
+    "question": "How does fuel work?",
+    "answer": "Fuel is full-to-full: pick up the RV with a full tank and return it full. Generator propane and battery levels are checked at return.",
+    "sortOrder": 7
+  },
+  {
+    "id": "faq-fuel",
+    "locale": "fr",
+    "category": "policies",
+    "question": "Comment fonctionne le carburant ?",
+    "answer": "Le carburant fonctionne selon le principe plein/plein : vous récupérez le camping-car avec le réservoir plein et le rendez-vous plein. Les niveaux de propane du générateur et de la batterie sont vérifiés au retour.",
+    "sortOrder": 7
+  },
+  {
+    "id": "faq-insurance",
+    "locale": "en",
+    "category": "insurance",
+    "question": "Is insurance mandatory?",
+    "answer": "Yes. Insurance is charged per day ($25 CAD/day by default) and is itemized in every price breakdown. Coverage details are included in the rental agreement.",
+    "sortOrder": 8
+  },
+  {
+    "id": "faq-insurance",
+    "locale": "fr",
+    "category": "insurance",
+    "question": "L'assurance est-elle obligatoire ?",
+    "answer": "Oui. L'assurance est facturée par jour (25 CAD/jour par défaut) et apparaît dans chaque calcul de prix. Les détails de la couverture sont inclus dans le contrat de location.",
+    "sortOrder": 8
+  },
+  {
+    "id": "faq-pets",
+    "locale": "en",
+    "category": "pets",
+    "question": "Can I travel with my pet?",
+    "answer": "Yes, on units marked pet friendly. A pet cleaning fee may apply. Please tell us about your pet when you send the reservation request.",
+    "sortOrder": 9
+  },
+  {
+    "id": "faq-pets",
+    "locale": "fr",
+    "category": "pets",
+    "question": "Puis-je voyager avec mon animal ?",
+    "answer": "Oui, sur les unités marquées « animaux acceptés ». Des frais de nettoyage peuvent s'appliquer. Indiquez-nous votre animal lors de l'envoi de la demande de réservation.",
+    "sortOrder": 9
+  }
+]

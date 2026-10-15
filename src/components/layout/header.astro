@@ -1,0 +1,77 @@
+---
+// src/components/layout/header.astro — SDD §5.1 (estático, cero JS salvo islands)
+import { t, localizedPath, type Locale } from "@/lib/i18n";
+import LanguageSwitcher from "./language-switcher";
+import MobileNav from "./mobile-nav";
+import Button from "@/components/ui/button.astro";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const pathname = Astro.url.pathname;
+
+const navItems = [
+  { href: localizedPath(locale, "/vehicles"), label: t(locale, "nav.vehicles") },
+  { href: localizedPath(locale, "/routes"), label: t(locale, "nav.routes") },
+  { href: `/${locale}/faq`, label: t(locale, "nav.faq") },
+];
+
+const mobileLabels = {
+  open: t(locale, "nav.open_menu"),
+  close: t(locale, "nav.close_menu"),
+  menu: t(locale, "nav.main_navigation"),
+};
+---
+
+<header class="sticky top-0 z-50 border-b border-neutral-200 bg-white/90 backdrop-blur">
+  <div class="container-page flex h-16 items-center justify-between gap-4">
+    <a
+      href={`/${locale}`}
+      class="flex items-center gap-2 font-heading text-lg font-extrabold text-neutral-900"
+    >
+      <span
+        class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-primary text-white"
+        aria-hidden="true"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+          <circle cx="7" cy="17" r="2" /><path d="M9 17h6" /><circle cx="17" cy="17" r="2" />
+        </svg>
+      </span>
+      DC Rentals
+    </a>
+
+    <nav aria-label={t(locale, "nav.main_navigation")} class="hidden md:block">
+      <ul class="flex items-center gap-6">
+        {
+          navItems.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                class="text-sm font-medium text-neutral-600 transition-colors hover:text-brand-primary focus-visible:ring-2 focus-visible:ring-brand-primary"
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="flex items-center gap-3">
+      <LanguageSwitcher locale={locale} pathname={pathname} client:load />
+      <Button href={localizedPath(locale, "/vehicles")} size="sm" class="hidden md:inline-flex">
+        {t(locale, "nav.book_now")}
+      </Button>
+      <MobileNav
+        items={navItems}
+        cta={{ href: localizedPath(locale, "/vehicles"), label: t(locale, "nav.book_now") }}
+        labels={mobileLabels}
+        client:load
+      />
+    </div>
+  </div>
+</header>

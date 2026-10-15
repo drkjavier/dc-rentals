@@ -4,6 +4,7 @@ import { describe, it, expect } from "vitest";
 import {
   t,
   localizedPath,
+  swapLocalePath,
   locales,
   defaultLocale,
   localeConfig,
@@ -70,5 +71,34 @@ describe("localizedPath()", () => {
 
   it("keeps faq and other segments as-is", () => {
     expect(localizedPath("fr", "/faq")).toBe("/fr/faq");
+  });
+});
+
+describe("swapLocalePath()", () => {
+  it("swaps /en/vehicles to /fr/vehicules", () => {
+    expect(swapLocalePath("/en/vehicles/2024-jayco-redhawk-26b")).toBe(
+      "/fr/vehicules/2024-jayco-redhawk-26b"
+    );
+  });
+
+  it("swaps /fr/vehicules back to /en/vehicles", () => {
+    expect(swapLocalePath("/fr/vehicules/2024-jayco-redhawk-26b")).toBe(
+      "/en/vehicles/2024-jayco-redhawk-26b"
+    );
+  });
+
+  it("swaps /fr/itineraires to /en/routes", () => {
+    expect(swapLocalePath("/fr/itineraires/rocky-mountains")).toBe(
+      "/en/routes/rocky-mountains"
+    );
+  });
+
+  it("swaps bare locale roots and simple pages", () => {
+    expect(swapLocalePath("/en")).toBe("/fr");
+    expect(swapLocalePath("/fr/faq")).toBe("/en/faq");
+  });
+
+  it("returns null for non-localized paths", () => {
+    expect(swapLocalePath("/admin")).toBeNull();
   });
 });

@@ -1,0 +1,22 @@
+---
+// src/components/ui/card.astro — SDD §6.2
+import { cn } from "@/lib/utils";
+
+interface Props {
+  class?: string;
+  interactive?: boolean;
+}
+
+const { class: className, interactive = false } = Astro.props;
+---
+
+<div
+  class={cn(
+    "rounded-xl border border-neutral-200 bg-white shadow-[var(--shadow-card)]",
+    interactive &&
+      "transition-shadow duration-200 ease-smooth hover:shadow-[var(--shadow-card-hover)]",
+    className
+  )}
+>
+  <slot />
+</div>
