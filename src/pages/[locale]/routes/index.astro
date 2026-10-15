@@ -1,0 +1,10 @@
+---
+// src/pages/[locale]/routes/index.astro — Rutas EN (/en/routes)
+import RoutesIndexPage from "@/components/routes/routes-index-page.astro";
+
+export function getStaticPaths() {
+  return [{ params: { locale: "en" } }];
+}
+---
+
+<RoutesIndexPage locale="en" />

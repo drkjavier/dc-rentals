@@ -1,0 +1,10 @@
+---
+// src/pages/[locale]/itineraires/index.astro — Rutas FR (/fr/itineraires)
+import RoutesIndexPage from "@/components/routes/routes-index-page.astro";
+
+export function getStaticPaths() {
+  return [{ params: { locale: "fr" } }];
+}
+---
+
+<RoutesIndexPage locale="fr" />

@@ -1,0 +1,157 @@
+---
+// src/components/vehicle/vehicle-detail-page.astro — Shell compartido de la
+// ficha (/en/vehicles/[slug] y /fr/vehicules/[slug]) — SDD §5.3 + LANDING §8
+import Layout from "@/components/layout/layout.astro";
+import SeoHead from "@/components/shared/seo-head.astro";
+import VehicleSpecs from "./vehicle-specs.astro";
+import VehicleAmenities from "./vehicle-amenities.astro";
+import VehicleFloorplan from "./vehicle-floorplan.astro";
+import VehicleStatusBadge from "./vehicle-status-badge.astro";
+import VehicleGrid from "./vehicle-grid.astro";
+import ImageGallery from "@/components/shared/image-gallery";
+import AvailabilityCalendar from "@/components/calendar/availability-calendar";
+import BookingWidget from "@/components/booking/booking-widget";
+import { t, type Locale } from "@/lib/i18n";
+import { formatCAD } from "@/lib/pricing";
+import { localizeSeo, vehicleJsonLd } from "@/lib/seo";
+import type { VehicleSummary } from "@/lib/content";
+
+interface Props {
+  vehicle: VehicleSummary;
+  similar: VehicleSummary[];
+  locale: Locale;
+}
+
+const { vehicle, similar, locale } = Astro.props;
+
+const title =
+  locale === "fr"
+    ? `${vehicle.name} | Location camping-car ${vehicle.locationName} | DC Rentals`
+    : `${vehicle.name} | RV Rental ${vehicle.locationName} | DC Rentals`;
+const description =
+  locale === "fr"
+    ? `Louez le ${vehicle.name} (${vehicle.typeLabel}) à ${vehicle.locationName}. ${vehicle.sleepCapacity} places, ${vehicle.specs.lengthFt}. À partir de ${vehicle.pricePerNightCAD} CAD/nuit. Vérifiez la disponibilité.`
+    : `Rent this ${vehicle.name} (${vehicle.typeLabel}) in ${vehicle.locationName}. Sleeps ${vehicle.sleepCapacity}, ${vehicle.specs.lengthFt}. From $${vehicle.pricePerNightCAD}/night CAD. Check availability.`;
+
+const { canonical, alternates } = localizeSeo(locale, Astro.url.pathname);
+
+const galleryImages = vehicle.images.map((img) => ({
+  url: img.url,
+  alt: locale === "fr" && img.altFr ? img.altFr : img.alt,
+  category: img.category,
+}));
+---
+
+<Layout locale={locale} title={title} description={description}>
+  <SeoHead
+    slot="head"
+    title={title}
+    description={description}
+    canonical={canonical}
+    alternates={alternates}
+    image={vehicle.mainImage}
+    locale={locale}
+    schema={vehicleJsonLd(vehicle, locale)}
+  />
+
+  <div class="container-page py-8">
+    {/* Galería — island con lightbox (prioridad #1, AGENT-TEAM-SPEC §3.5) */}
+    <ImageGallery images={galleryImages} locale={locale} client:visible />
+
+    {/* Header de la ficha */}
+    <div class="mt-6 flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <h1 class="font-heading text-3xl font-bold text-neutral-900">{vehicle.name}</h1>
+        <p class="mt-1 text-neutral-500">
+          {vehicle.typeLabel} · {vehicle.year} · {vehicle.brand}
+        </p>
+      </div>
+      <VehicleStatusBadge status={vehicle.status} locale={locale} />
+    </div>
+
+    <div class="mt-4 flex flex-wrap gap-4 text-sm text-neutral-600">
+      <span class="rounded-lg bg-white px-3 py-1.5 shadow-sm">🛏 {vehicle.sleepCapacity} {t(locale, "catalog.sleeps")}</span>
+      <span class="rounded-lg bg-white px-3 py-1.5 shadow-sm">📐 {vehicle.lengthDisplay}</span>
+      <span class="rounded-lg bg-white px-3 py-1.5 shadow-sm">📍 {vehicle.locationName}</span>
+      <span class="rounded-lg bg-white px-3 py-1.5 shadow-sm font-semibold">
+        {t(locale, "vehicle.from_price", { price: formatCAD(vehicle.pricePerNightCAD, locale) })}
+      </span>
+    </div>
+
+    <p class="mt-4 max-w-3xl leading-relaxed text-neutral-700">
+      {locale === "fr" ? vehicle.descriptionFr : vehicle.description}
+    </p>
+
+    {/* Layout: contenido + sidebar de reserva */}
+    <div class="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
+      <div class="space-y-8">
+        <VehicleSpecs
+          specs={vehicle.specs}
+          locale={locale}
+          sleepCapacity={vehicle.sleepCapacity}
+          seatBelts={vehicle.seatBelts}
+          petFriendly={vehicle.petFriendly}
+        />
+        <VehicleAmenities amenities={vehicle.amenities} locale={locale} />
+        {vehicle.floorPlanSvg && (
+          <VehicleFloorplan svgUrl={vehicle.floorPlanSvg} name={vehicle.name} locale={locale} />
+        )}
+
+        {/* Calendario — island con disponibilidad en tiempo real */}
+        <section
+          id="availability"
+          aria-labelledby="availability-title"
+          class="rounded-xl border border-neutral-200 bg-white p-6"
+        >
+          <h2 id="availability-title" class="font-heading text-xl font-bold text-neutral-900">
+            {t(locale, "calendar.title")}
+          </h2>
+          <div class="mt-4">
+            <AvailabilityCalendar vehicleId={vehicle.internalCode} locale={locale} client:visible />
+          </div>
+          {vehicle.status === "OCCUPIED" && (
+            <div class="mt-4 rounded-lg bg-status-occupied/10 p-4 text-sm text-neutral-800">
+              <p class="font-semibold">{t(locale, "common.status_occupied")}</p>
+              {vehicle.availableFromDate && (
+                <p class="mt-1">
+                  {t(locale, "availability.next_available", {
+                    date: vehicle.availableFromDate.toISOString().split("T")[0],
+                  })}
+                </p>
+              )}
+            </div>
+          )}
+        </section>
+      </div>
+
+      {/* Widget de reserva — sticky */}
+      <aside class="lg:sticky lg:top-24 lg:self-start">
+        <BookingWidget
+          vehicle={{
+            internalCode: vehicle.internalCode,
+            name: vehicle.name,
+            pricePerNightCAD: vehicle.pricePerNightCAD,
+            securityDepositCAD: vehicle.securityDepositCAD,
+            status: vehicle.status,
+          }}
+          locale={locale}
+          client:visible
+        />
+      </aside>
+    </div>
+
+    {/* Unidades similares */}
+    {
+      similar.length > 0 && (
+        <section aria-labelledby="similar-title" class="mt-16">
+          <h2 id="similar-title" class="font-heading text-2xl font-bold text-neutral-900">
+            {t(locale, "vehicle.similar_title")}
+          </h2>
+          <div class="mt-6">
+            <VehicleGrid vehicles={similar} locale={locale} />
+          </div>
+        </section>
+      )
+    }
+  </div>
+</Layout>

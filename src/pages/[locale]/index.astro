@@ -1,0 +1,83 @@
+---
+// src/pages/[locale]/index.astro — Landing page principal (SSG, SDD §2)
+import Layout from "@/components/layout/layout.astro";
+import SeoHead from "@/components/shared/seo-head.astro";
+import HeroSection from "@/components/landing/hero-section.astro";
+import HowItWorks from "@/components/landing/how-it-works.astro";
+import FeaturedVehicles from "@/components/landing/featured-vehicles.astro";
+import PopularRoutes from "@/components/landing/popular-routes.astro";
+import Testimonials from "@/components/landing/testimonials.astro";
+import FaqSection from "@/components/landing/faq-section";
+import CtaSection from "@/components/landing/cta-section.astro";
+import { t, isLocale, type Locale } from "@/lib/i18n";
+import { getVehiclesForApi, getRoutes, getFaq } from "@/lib/content";
+import { localizeSeo, websiteJsonLd, faqJsonLd } from "@/lib/seo";
+
+export function getStaticPaths() {
+  return [{ params: { locale: "en" } }, { params: { locale: "fr" } }];
+}
+
+const { locale } = Astro.params;
+if (!isLocale(locale!)) return Astro.redirect("/404");
+const loc = locale as Locale;
+
+const [vehicles, routes, faq] = await Promise.all([
+  getVehiclesForApi(loc),
+  getRoutes(loc),
+  getFaq(loc),
+]);
+
+const availableCount = vehicles.filter((v) => v.status === "AVAILABLE").length;
+const { canonical, alternates } = localizeSeo(loc, Astro.url.pathname);
+const title =
+  loc === "fr"
+    ? "DC Rentals — Location de camping-cars au Canada"
+    : "DC Rentals — RV Rentals Across Canada";
+const description =
+  loc === "fr"
+    ? "Location de camping-cars premium pour des road trips inoubliables au Canada. Disponibilité en temps réel, prix transparents, réservation simple."
+    : "Premium RV rentals for unforgettable road trips across Canada. Real-time availability, transparent pricing, easy reservation requests.";
+---
+
+<Layout locale={loc} title={title} description={description}>
+  <SeoHead
+    slot="head"
+    title={title}
+    description={description}
+    canonical={canonical}
+    alternates={alternates}
+    image="/images/hero/hero-rv.svg"
+    locale={loc}
+    schema={websiteJsonLd(loc)}
+  />
+
+  <HeroSection locale={loc} availableCount={availableCount} />
+  <HowItWorks locale={loc} />
+  <FeaturedVehicles locale={loc} vehicles={vehicles.filter((v) => v.featured).slice(0, 3)} />
+  <PopularRoutes locale={loc} routes={routes.slice(0, 3)} />
+  <Testimonials locale={loc} />
+
+  <section class="section-spacing bg-neutral-100" aria-labelledby="faq-title">
+    <div class="container-page">
+      <h2 id="faq-title" class="text-center font-heading text-3xl font-bold text-neutral-900">
+        {t(loc, "faq.title")}
+      </h2>
+      <p class="mt-2 text-center text-neutral-500">{t(loc, "faq.subtitle")}</p>
+      <div class="mt-10">
+        <FaqSection locale={loc} items={faq} maxItems={5} client:visible />
+      </div>
+      <p class="mt-6 text-center">
+        <a href={`/${loc}/faq`} class="font-medium text-brand-primary hover:underline">
+          {t(loc, "common.see_all")} →
+        </a>
+      </p>
+    </div>
+  </section>
+
+  <CtaSection locale={loc} />
+
+  <script
+    type="application/ld+json"
+    set:html={JSON.stringify(faqJsonLd(faq.map((f) => ({ question: f.question, answer: f.answer }))))}
+  />
+</Layout>

@@ -1,0 +1,55 @@
+---
+// src/components/landing/popular-routes.astro — Landing: rutas populares
+import Button from "@/components/ui/button.astro";
+import { t, localizedPath, type Locale } from "@/lib/i18n";
+import type { RouteSummary } from "@/lib/content";
+
+interface Props {
+  locale: Locale;
+  routes: RouteSummary[];
+}
+
+const { locale, routes } = Astro.props;
+---
+
+<section class="section-spacing bg-white" aria-labelledby="routes-title">
+  <div class="container-page">
+    <h2 id="routes-title" class="font-heading text-3xl font-bold text-neutral-900">
+      {t(locale, "landing.routes_title")}
+    </h2>
+    <p class="mt-2 text-neutral-500">{t(locale, "landing.routes_subtitle")}</p>
+
+    <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        routes.map((route) => (
+          <article class="group overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-card-hover)]">
+            <a
+              href={`${localizedPath(locale, "/routes")}/${route.slug}`}
+              class="after:absolute after:inset-0 relative block"
+            >
+              <img
+                src={route.image}
+                alt={route.name}
+                width="1200"
+                height="630"
+                loading="lazy"
+                class="aspect-[16/9] w-full object-cover motion-safe:transition-transform motion-safe:duration-300 group-hover:scale-[1.03]"
+              />
+              <div class="p-5">
+                <h3 class="font-heading text-lg font-semibold text-neutral-900 group-hover:text-brand-primary">
+                  {route.name}
+                </h3>
+                <p class="mt-1 line-clamp-2 text-sm text-neutral-600">{route.description}</p>
+                <p class="mt-3 flex flex-wrap gap-x-4 text-xs text-neutral-500">
+                  <span>🛣 {route.distance}</span>
+                  <span>⏱ {route.duration}</span>
+                  <span>🌤 {route.bestSeason}</span>
+                </p>
+              </div>
+            </a>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>

@@ -1,0 +1,47 @@
+---
+// src/components/landing/hero-section.astro — SDD §6.1 Landing (Hero)
+import Button from "@/components/ui/button.astro";
+import { t, localizedPath, type Locale } from "@/lib/i18n";
+
+interface Props {
+  locale: Locale;
+  availableCount: number;
+}
+
+const { locale, availableCount } = Astro.props;
+---
+
+<section class="relative overflow-hidden bg-neutral-900" aria-label="Hero">
+  <img
+    src="/images/hero/hero-rv.svg"
+    alt=""
+    width="1920"
+    height="1080"
+    fetchpriority="high"
+    class="absolute inset-0 h-full w-full object-cover opacity-60"
+  />
+  <div class="relative bg-gradient-to-r from-neutral-900/90 via-neutral-900/60 to-transparent">
+    <div class="container-page flex min-h-[560px] flex-col justify-center py-20 lg:py-28">
+      <h1 class="max-w-2xl font-heading text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
+        {t(locale, "hero.title")}
+      </h1>
+      <p class="mt-4 max-w-xl text-lg text-neutral-200">
+        {t(locale, "hero.subtitle")}
+      </p>
+      <p class="mt-4">
+        <span class="status-badge bg-status-available/20 text-status-available">
+          <span class="h-2 w-2 rounded-full bg-status-available" aria-hidden="true"></span>
+          {t(locale, "hero.vehicles_available", { count: availableCount })}
+        </span>
+      </p>
+      <div class="mt-8 flex flex-wrap gap-4">
+        <Button href={localizedPath(locale, "/vehicles")} size="lg">
+          {t(locale, "hero.cta_fleet")}
+        </Button>
+        <Button href={localizedPath(locale, "/routes")} size="lg" variant="outline" class="border-white text-white hover:bg-white hover:text-neutral-900">
+          {t(locale, "hero.cta_customize")}
+        </Button>
+      </div>
+    </div>
+  </div>
+</section>

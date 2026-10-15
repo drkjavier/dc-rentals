@@ -1,0 +1,26 @@
+---
+// src/pages/[locale]/itineraires/[slug].astro — Detalle de ruta FR (MDX)
+import RouteDetailPage from "@/components/routes/route-detail-page.astro";
+import { getCollection } from "astro:content";
+import { getRoutes } from "@/lib/content";
+
+export async function getStaticPaths() {
+  const routes = await getRoutes("fr");
+  return routes.map((route) => ({
+    params: { locale: "fr", slug: route.slug },
+  }));
+}
+
+const { slug } = Astro.params;
+const routes = await getCollection(
+  "routes",
+  ({ data }) => data.active && data.locale === "fr"
+);
+const entry = routes.find((r) => r.id.replace(/\.(en|fr)$/, "") === slug);
+if (!entry) return Astro.redirect("/404");
+
+const { Content } = await entry.render();
+const route = (await getRoutes("fr")).find((r) => r.slug === slug)!;
+---
+
+<RouteDetailPage route={route} locale="fr" Content={Content} />

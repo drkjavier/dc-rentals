@@ -1,0 +1,71 @@
+---
+// src/components/landing/testimonials.astro — Landing: testimonios (estáticos MVP)
+import { t, type Locale } from "@/lib/i18n";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+
+const testimonials = [
+  {
+    name: "Sarah & Marc",
+    location: { en: "Ottawa, ON", fr: "Ottawa (ON)" },
+    rating: 5,
+    quote: {
+      en: "Our first RV trip and zero stress. The Redhawk was spotless, the booking flow transparent, and Banff in August was a dream.",
+      fr: "Notre premier voyage en camping-car sans le moindre stress. Le Redhawk était impeccable, la réservation transparente et Banff en août était un rêve.",
+    },
+  },
+  {
+    name: "The Patel Family",
+    location: { en: "Calgary, AB", fr: "Calgary (AB)" },
+    rating: 5,
+    quote: {
+      en: "Six people, ten days, Rockies to Vancouver Island. The kids loved the cabover bunk and we loved the clear price breakdown.",
+      fr: "Six personnes, dix jours, des Rocheuses à l'île de Vancouver. Les enfants ont adoré la couchette et nous avons adoré le détail du prix.",
+    },
+  },
+  {
+    name: "Élodie M.",
+    location: { en: "Montréal, QC", fr: "Montréal (QC)" },
+    rating: 4,
+    quote: {
+      en: "Easy pickup at the Montréal depot and a very responsive team when we adjusted our return date by phone.",
+      fr: "Retrait facile au dépôt de Montréal et une équipe très réactive quand nous avons décalé notre date de retour par téléphone.",
+    },
+  },
+];
+
+function stars(rating: number): string {
+  return "★".repeat(rating) + "☆".repeat(5 - rating);
+}
+---
+
+<section class="section-spacing" aria-labelledby="testimonials-title">
+  <div class="container-page">
+    <h2 id="testimonials-title" class="font-heading text-3xl font-bold text-neutral-900">
+      {t(locale, "landing.testimonials_title")}
+    </h2>
+
+    <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        testimonials.map((item) => (
+          <figure class="rounded-xl border border-neutral-200 bg-white p-6 shadow-[var(--shadow-card)]">
+            <div class="text-brand-accent" aria-label={`${item.rating}/5`}>
+              <span aria-hidden="true">{stars(item.rating)}</span>
+            </div>
+            <blockquote class="mt-3 text-sm leading-relaxed text-neutral-700">
+              “{item.quote[locale]}”
+            </blockquote>
+            <figcaption class="mt-4 text-sm">
+              <span class="font-semibold text-neutral-900">{item.name}</span>
+              <span class="text-neutral-500"> · {item.location[locale]}</span>
+            </figcaption>
+          </figure>
+        ))
+      }
+    </div>
+  </div>
+</section>

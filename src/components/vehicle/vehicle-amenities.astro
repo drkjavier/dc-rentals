@@ -1,0 +1,63 @@
+---
+// src/components/vehicle/vehicle-amenities.astro — SDD §5.5 (amenidades por categoría)
+import { t, type Locale } from "@/lib/i18n";
+import { getAmenityDef, AMENITY_CATEGORY_ORDER } from "@/lib/amenities";
+import type { VehicleAmenity } from "@/lib/content-schemas";
+
+interface Props {
+  amenities: VehicleAmenity[];
+  locale: Locale;
+}
+
+const { amenities, locale } = Astro.props;
+
+const categoryLabelKey: Record<string, string> = {
+  kitchen: "vehicle.kitchen",
+  bathroom: "vehicle.bathroom",
+  bedroom: "vehicle.bedroom",
+  living: "vehicle.living",
+  climate: "vehicle.climate",
+  systems: "vehicle.systems",
+  entertainment: "vehicle.entertainment",
+  safety: "vehicle.safety",
+};
+
+const grouped = AMENITY_CATEGORY_ORDER.map((category) => ({
+  category,
+  label: t(locale, categoryLabelKey[category]),
+  items: amenities
+    .filter((a) => getAmenityDef(a.id)?.category === category)
+    .map((a) => {
+      const def = getAmenityDef(a.id)!;
+      const name = locale === "fr" ? def.nameFr : def.name;
+      const detail = locale === "fr" ? a.detailFr ?? a.detail : a.detail;
+      return detail ? `${name} — ${detail}` : name;
+    }),
+})).filter((group) => group.items.length > 0);
+---
+
+<section aria-labelledby="amenities-title" class="rounded-xl border border-neutral-200 bg-white p-6">
+  <h2 id="amenities-title" class="font-heading text-xl font-bold text-neutral-900">
+    {t(locale, "vehicle.amenities_title")}
+  </h2>
+
+  <div class="mt-4 grid gap-6 sm:grid-cols-2">
+    {
+      grouped.map((group) => (
+        <div>
+          <h3 class="font-semibold text-neutral-800">{group.label}</h3>
+          <ul class="mt-2 space-y-1.5 text-sm">
+            {group.items.map((item) => (
+              <li class="flex items-start gap-2 text-neutral-700">
+                <span class="text-status-available" aria-hidden="true">
+                  ✓
+                </span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))
+    }
+  </div>
+</section>

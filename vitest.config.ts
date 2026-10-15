@@ -11,6 +11,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    globals: true, // habilita auto-cleanup de @testing-library/react (afterEach)
     setupFiles: ["./tests/setup.ts"],
     include: ["tests/unit/**/*.test.ts", "tests/unit/**/*.test.tsx"],
     coverage: {

@@ -1,0 +1,28 @@
+---
+// src/components/vehicle/vehicle-floorplan.astro — Plano de planta (SVG)
+import { t, type Locale } from "@/lib/i18n";
+
+interface Props {
+  svgUrl: string;
+  name: string;
+  locale: Locale;
+}
+
+const { svgUrl, name, locale } = Astro.props;
+---
+
+<section aria-labelledby="floorplan-title" class="rounded-xl border border-neutral-200 bg-white p-6">
+  <h2 id="floorplan-title" class="font-heading text-xl font-bold text-neutral-900">
+    {t(locale, "vehicle.floorplan_title")}
+  </h2>
+  <div class="mt-4">
+    <img
+      src={svgUrl}
+      alt={`${name} — ${t(locale, "vehicle.floorplan_title")}`}
+      width="1000"
+      height="600"
+      loading="lazy"
+      class="mx-auto w-full max-w-2xl rounded-lg border border-neutral-100"
+    />
+  </div>
+</section>

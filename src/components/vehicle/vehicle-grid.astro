@@ -1,0 +1,22 @@
+---
+// src/components/vehicle/vehicle-grid.astro — SDD §5.2 (lista estática)
+import VehicleCard from "./vehicle-card.astro";
+import type { VehicleSummary } from "@/lib/content";
+import type { Locale } from "@/lib/i18n";
+
+interface Props {
+  vehicles: VehicleSummary[];
+  locale: Locale;
+  showStatus?: boolean;
+}
+
+const { vehicles, locale, showStatus = true } = Astro.props;
+---
+
+<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+  {
+    vehicles.map((vehicle) => (
+      <VehicleCard vehicle={vehicle} locale={locale} showStatus={showStatus} />
+    ))
+  }
+</div>

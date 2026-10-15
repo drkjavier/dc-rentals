@@ -1,0 +1,44 @@
+---
+// src/pages/[locale]/faq.astro — Preguntas frecuentes (SDD §2)
+import Layout from "@/components/layout/layout.astro";
+import SeoHead from "@/components/shared/seo-head.astro";
+import FaqSection from "@/components/landing/faq-section";
+import { t, isLocale, type Locale } from "@/lib/i18n";
+import { getFaq } from "@/lib/content";
+import { localizeSeo, faqJsonLd } from "@/lib/seo";
+
+export function getStaticPaths() {
+  return [{ params: { locale: "en" } }, { params: { locale: "fr" } }];
+}
+
+const { locale } = Astro.params;
+if (!isLocale(locale!)) return Astro.redirect("/404");
+const loc = locale as Locale;
+
+const faq = await getFaq(loc);
+const { canonical, alternates } = localizeSeo(loc, Astro.url.pathname);
+const title = `${t(loc, "faq.title")} | DC Rentals`;
+const description = t(loc, "faq.subtitle");
+---
+
+<Layout locale={loc} title={title} description={description}>
+  <SeoHead
+    slot="head"
+    title={title}
+    description={description}
+    canonical={canonical}
+    alternates={alternates}
+    locale={loc}
+    schema={faqJsonLd(faq.map((f) => ({ question: f.question, answer: f.answer })))}
+  />
+
+  <div class="container-page py-12">
+    <h1 class="text-center font-heading text-3xl font-bold text-neutral-900">
+      {t(loc, "faq.title")}
+    </h1>
+    <p class="mt-2 text-center text-neutral-500">{t(loc, "faq.subtitle")}</p>
+    <div class="mx-auto mt-10 max-w-3xl">
+      <FaqSection locale={loc} items={faq} client:visible />
+    </div>
+  </div>
+</Layout>

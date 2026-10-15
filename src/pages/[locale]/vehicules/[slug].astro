@@ -1,0 +1,20 @@
+---
+// src/pages/[locale]/vehicules/[slug].astro — Ficha de vehículo FR (SSG)
+import VehicleDetailPage from "@/components/vehicle/vehicle-detail-page.astro";
+import { getVehiclesForApi, getVehicleBySlug, getSimilarVehicles } from "@/lib/content";
+
+export async function getStaticPaths() {
+  const vehicles = await getVehiclesForApi("fr");
+  return vehicles.map((vehicle) => ({
+    params: { locale: "fr", slug: vehicle.slug },
+  }));
+}
+
+const { slug } = Astro.params;
+const vehicle = await getVehicleBySlug(slug!, "fr");
+if (!vehicle) return Astro.redirect("/404");
+
+const similar = await getSimilarVehicles(vehicle);
+---
+
+<VehicleDetailPage vehicle={vehicle} similar={similar} locale="fr" />

@@ -1,0 +1,34 @@
+---
+// src/components/landing/featured-vehicles.astro — Landing: unidades destacadas
+import VehicleGrid from "@/components/vehicle/vehicle-grid.astro";
+import Button from "@/components/ui/button.astro";
+import { t, localizedPath, type Locale } from "@/lib/i18n";
+import type { VehicleSummary } from "@/lib/content";
+
+interface Props {
+  locale: Locale;
+  vehicles: VehicleSummary[];
+}
+
+const { locale, vehicles } = Astro.props;
+---
+
+<section class="section-spacing" aria-labelledby="featured-title">
+  <div class="container-page">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h2 id="featured-title" class="font-heading text-3xl font-bold text-neutral-900">
+          {t(locale, "landing.featured_title")}
+        </h2>
+        <p class="mt-2 text-neutral-500">{t(locale, "landing.featured_subtitle")}</p>
+      </div>
+      <Button href={localizedPath(locale, "/vehicles")} variant="ghost">
+        {t(locale, "common.see_all")} →
+      </Button>
+    </div>
+
+    <div class="mt-10">
+      <VehicleGrid vehicles={vehicles} locale={locale} />
+    </div>
+  </div>
+</section>

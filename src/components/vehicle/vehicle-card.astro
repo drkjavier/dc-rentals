@@ -1,0 +1,79 @@
+---
+// src/components/vehicle/vehicle-card.astro — SDD §5.2 (estático, cero JS)
+import { cn } from "@/lib/utils";
+import { t, type Locale } from "@/lib/i18n";
+import { formatCAD } from "@/lib/pricing";
+import VehicleStatusBadge from "./vehicle-status-badge.astro";
+import type { VehicleSummary } from "@/lib/content";
+
+interface Props {
+  vehicle: VehicleSummary;
+  locale: Locale;
+  showStatus?: boolean;
+  class?: string;
+}
+
+const { vehicle, locale, showStatus = true, class: className } = Astro.props;
+
+const vehicleUrl =
+  locale === "fr"
+    ? `/fr/vehicules/${vehicle.slug}`
+    : `/en/vehicles/${vehicle.slug}`;
+
+const alt = locale === "fr" && vehicle.images[0]?.altFr ? vehicle.images[0].altFr : vehicle.name;
+---
+
+<article
+  data-vehicle-card
+  data-internalcode={vehicle.internalCode}
+  data-type={vehicle.type}
+  data-sleep={vehicle.sleepCapacity}
+  data-pet={String(vehicle.petFriendly)}
+  data-location={vehicle.locationId}
+  data-price={vehicle.pricePerNightCAD}
+  data-length={vehicle.specs.lengthM}
+  data-featured={String(vehicle.featured)}
+  data-name={vehicle.name}
+  class={cn(
+    "group relative flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-[var(--shadow-card)] transition-shadow duration-200 ease-smooth hover:shadow-[var(--shadow-card-hover)]",
+    className
+  )}
+>
+  <a href={vehicleUrl} class="after:absolute after:inset-0 focus-visible:ring-2">
+    <img
+      src={vehicle.mainImage}
+      alt={alt}
+      width="600"
+      height="400"
+      loading="lazy"
+      class="aspect-[3/2] w-full object-cover transition-transform duration-300 ease-smooth motion-safe:group-hover:scale-[1.02]"
+    />
+  </a>
+
+  <div class="flex flex-1 flex-col p-4">
+    <div class="mb-2 flex items-start justify-between gap-2">
+      <div>
+        <h3 class="font-heading text-lg font-semibold text-neutral-900">
+          <a href={vehicleUrl} class="hover:text-brand-primary">
+            {vehicle.name}
+          </a>
+        </h3>
+        <p class="text-sm text-neutral-500">
+          {vehicle.typeLabel} · {vehicle.year}
+        </p>
+      </div>
+      {showStatus && <VehicleStatusBadge status={vehicle.status} locale={locale} />}
+    </div>
+
+    <div class="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-neutral-600">
+      <span>🛏 {t(locale, "catalog.sleeps")} {vehicle.sleepCapacity}</span>
+      <span>📐 {vehicle.lengthDisplay}</span>
+      <span>📍 {vehicle.locationName}</span>
+      {vehicle.petFriendly && <span title={t(locale, "vehicle.pet_friendly")}>🐾</span>}
+    </div>
+
+    <p class="mt-auto font-semibold text-neutral-900">
+      {t(locale, "catalog.from", { price: formatCAD(vehicle.pricePerNightCAD, locale) })}
+    </p>
+  </div>
+</article>

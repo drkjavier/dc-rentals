@@ -1,0 +1,25 @@
+---
+// src/components/vehicle/vehicle-status-badge.astro — SDD §11.4 (badge pill)
+import Badge from "@/components/ui/badge.astro";
+import { t, type Locale } from "@/lib/i18n";
+import { STATUS_LABEL_KEYS, STATUS_TONES } from "@/lib/vehicle-labels";
+import type { VehicleStatus } from "@/lib/content-schemas";
+
+interface Props {
+  status: VehicleStatus;
+  locale: Locale;
+}
+
+const { status, locale } = Astro.props;
+const tone = STATUS_TONES[status] as
+  | "available"
+  | "occupied"
+  | "maintenance"
+  | "partial"
+  | "upcoming";
+---
+
+<Badge tone={tone}>
+  <span class="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true"></span>
+  {t(locale, STATUS_LABEL_KEYS[status])}
+</Badge>

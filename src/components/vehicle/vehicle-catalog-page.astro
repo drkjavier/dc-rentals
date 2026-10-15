@@ -1,0 +1,76 @@
+---
+// src/components/vehicle/vehicle-catalog-page.astro — Shell compartido de
+// /en/vehicles y /fr/vehicules (SDD §2, LANDING §6.1 Catálogo)
+import Layout from "@/components/layout/layout.astro";
+import SeoHead from "@/components/shared/seo-head.astro";
+import VehicleGrid from "./vehicle-grid.astro";
+import VehicleFilters from "./vehicle-filters";
+import { t, type Locale } from "@/lib/i18n";
+import { getVehiclesForApi } from "@/lib/content";
+import { localizeSeo } from "@/lib/seo";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const vehicles = await getVehiclesForApi(locale);
+
+const { canonical, alternates } = localizeSeo(locale, Astro.url.pathname);
+const title =
+  locale === "fr"
+    ? "Notre flotte | DC Rentals — Location de camping-cars au Canada"
+    : "Our Fleet | DC Rentals — RV Rentals Across Canada";
+const description = t(locale, "catalog.subtitle");
+---
+
+<Layout locale={locale} title={title} description={description}>
+  <SeoHead
+    slot="head"
+    title={title}
+    description={description}
+    canonical={canonical}
+    alternates={alternates}
+    locale={locale}
+  />
+  <div class="container-page py-10">
+  <h1 class="font-heading text-3xl font-bold text-neutral-900">
+    {t(locale, "catalog.title")}
+  </h1>
+  <p class="mt-2 text-neutral-500">{t(locale, "catalog.subtitle")}</p>
+
+  <div class="mt-8 grid gap-8 lg:grid-cols-[280px_1fr]">
+    <aside class="lg:sticky lg:top-24 lg:self-start">
+      <VehicleFilters locale={locale} client:visible />
+    </aside>
+
+    <div>
+      <p
+        id="results-count"
+        class="mb-4 text-sm text-neutral-500"
+        aria-live="polite"
+      >
+        {t(locale, "catalog.results_count", { count: vehicles.length })}
+      </p>
+
+      <div id="vehicle-grid">
+        <VehicleGrid vehicles={vehicles} locale={locale} />
+      </div>
+
+      <div id="filters-empty-state" class="hidden rounded-xl border border-dashed border-neutral-300 bg-white p-12 text-center">
+        <p class="font-heading text-lg font-semibold text-neutral-900">
+          {t(locale, "catalog.empty_title")}
+        </p>
+        <p class="mt-2 text-sm text-neutral-500">{t(locale, "catalog.empty_desc")}</p>
+        <button
+          type="button"
+          id="filters-reset"
+          class="mt-6 rounded-lg bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
+        >
+          {t(locale, "catalog.reset_filters")}
+        </button>
+      </div>
+    </div>
+  </div>
+</Layout>
+</div>

@@ -1,0 +1,49 @@
+---
+// src/components/landing/how-it-works.astro — SDD §6.1 ("Cómo funciona", 3 pasos)
+import { t, type Locale } from "@/lib/i18n";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+
+const steps = [
+  { icon: "🚐", titleKey: "how_it_works.step1_title", descKey: "how_it_works.step1_desc" },
+  { icon: "📅", titleKey: "how_it_works.step2_title", descKey: "how_it_works.step2_desc" },
+  { icon: "🔑", titleKey: "how_it_works.step3_title", descKey: "how_it_works.step3_desc" },
+];
+---
+
+<section class="section-spacing bg-white" aria-labelledby="how-it-works-title">
+  <div class="container-page">
+    <h2 id="how-it-works-title" class="text-center font-heading text-3xl font-bold text-neutral-900">
+      {t(locale, "how_it_works.title")}
+    </h2>
+    <p class="mt-2 text-center text-neutral-500">{t(locale, "how_it_works.subtitle")}</p>
+
+    <ol class="mt-12 grid gap-8 sm:grid-cols-3">
+      {
+        steps.map((step, index) => (
+          <li class="relative rounded-xl border border-neutral-200 bg-neutral-50 p-6 text-center">
+            <span
+              class="absolute -top-3 left-6 flex h-7 w-7 items-center justify-center rounded-full bg-brand-primary text-xs font-bold text-white"
+              aria-hidden="true"
+            >
+              {index + 1}
+            </span>
+            <span class="text-4xl" aria-hidden="true">
+              {step.icon}
+            </span>
+            <h3 class="mt-4 font-heading text-lg font-semibold text-neutral-900">
+              {t(locale, step.titleKey)}
+            </h3>
+            <p class="mt-2 text-sm leading-relaxed text-neutral-600">
+              {t(locale, step.descKey)}
+            </p>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>

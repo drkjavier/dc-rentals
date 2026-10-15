@@ -1,0 +1,10 @@
+---
+// src/pages/[locale]/vehicules/index.astro — Catálogo FR (/fr/vehicules)
+import VehicleCatalogPage from "@/components/vehicle/vehicle-catalog-page.astro";
+
+export function getStaticPaths() {
+  return [{ params: { locale: "fr" } }];
+}
+---
+
+<VehicleCatalogPage locale="fr" />

@@ -1,0 +1,109 @@
+---
+// src/components/vehicle/vehicle-specs.astro — SDD §5, LANDING §5.2-5.6
+import { t, type Locale } from "@/lib/i18n";
+import type { VehicleSpecs } from "@/lib/content-schemas";
+
+interface Props {
+  specs: VehicleSpecs;
+  locale: Locale;
+  sleepCapacity: number;
+  seatBelts: number;
+  petFriendly: boolean;
+}
+
+const { specs, locale, sleepCapacity, seatBelts, petFriendly } = Astro.props;
+
+const dimensions: Array<[string, string]> = [
+  [t(locale, "vehicle.length"), `${specs.lengthM} m (${specs.lengthFt})`],
+  [t(locale, "vehicle.width"), `${specs.widthM} m (${specs.widthIn} in)`],
+  [t(locale, "vehicle.height"), `${specs.heightM} m (${specs.heightFt})`],
+  [t(locale, "vehicle.interior_height"), `${specs.interiorHeightM} m (${specs.interiorHeightFt})`],
+  [t(locale, "vehicle.area"), `${specs.areaSqm} m² (${specs.areaSqft} sq ft)`],
+  [t(locale, "vehicle.slide_outs"), String(specs.slideOuts)],
+];
+
+const capacity: Array<[string, string]> = [
+  [t(locale, "vehicle.sleep_capacity"), String(sleepCapacity)],
+  [t(locale, "vehicle.seat_belts"), String(seatBelts)],
+  [t(locale, "vehicle.fresh_water"), `${specs.freshWaterGal} gal (${specs.freshWaterL} L)`],
+  [t(locale, "vehicle.gray_water"), `${specs.grayWaterGal} gal (${specs.grayWaterL} L)`],
+  [t(locale, "vehicle.black_water"), `${specs.blackWaterGal} gal (${specs.blackWaterL} L)`],
+  [t(locale, "vehicle.fuel"), `${specs.fuelCapacityGal} gal (${specs.fuelCapacityL} L)`],
+];
+
+const engine: Array<[string, string]> = [
+  [t(locale, "vehicle.chassis"), specs.chassis],
+  [t(locale, "vehicle.engine"), specs.engine],
+  [t(locale, "vehicle.transmission"), specs.transmission],
+  [t(locale, "vehicle.fuel_type"), specs.fuelType],
+  [t(locale, "vehicle.mpg"), `${specs.mpg} MPG (${specs.mpgL100km} L/100km)`],
+  ...(specs.generatorWatts
+    ? ([[t(locale, "vehicle.generator"), `${specs.generatorWatts}W`]] as Array<[string, string]>)
+    : []),
+];
+
+const exterior: Array<[string, string | boolean]> = [
+  [t(locale, "vehicle.length"), specs.awningLengthFt ?? "—"],
+  [t("en", "vehicle.exterior"), specs.exteriorShower ? "✓" : "—"],
+  ["Backup camera", specs.backupCamera ? "✓" : "—"],
+  ["Bike rack", specs.bikeRack ? "✓" : "—"],
+];
+---
+
+<section aria-labelledby="specs-title" class="rounded-xl border border-neutral-200 bg-white p-6">
+  <h2 id="specs-title" class="font-heading text-xl font-bold text-neutral-900">
+    {t(locale, "vehicle.specs_title")}
+  </h2>
+
+  <h3 class="mt-6 font-semibold text-neutral-800">{t(locale, "vehicle.dimensions")}</h3>
+  <dl class="spec-grid mt-2 text-sm">
+    {
+      dimensions.map(([label, value]) => (
+        <div class="flex justify-between gap-2 border-b border-neutral-100 py-1.5">
+          <dt class="text-neutral-500">{label}</dt>
+          <dd class="font-mono text-xs font-medium text-neutral-900">{value}</dd>
+        </div>
+      ))
+    }
+  </dl>
+
+  <h3 class="mt-6 font-semibold text-neutral-800">{t(locale, "vehicle.tank_capacity")}</h3>
+  <dl class="spec-grid mt-2 text-sm">
+    {
+      capacity.map(([label, value]) => (
+        <div class="flex justify-between gap-2 border-b border-neutral-100 py-1.5">
+          <dt class="text-neutral-500">{label}</dt>
+          <dd class="font-mono text-xs font-medium text-neutral-900">{value}</dd>
+        </div>
+      ))
+    }
+    <div class="flex justify-between gap-2 border-b border-neutral-100 py-1.5">
+      <dt class="text-neutral-500">{t(locale, "vehicle.pet_friendly")}</dt>
+      <dd class="font-medium text-neutral-900">{petFriendly ? "✓" : "—"}</dd>
+    </div>
+  </dl>
+
+  <h3 class="mt-6 font-semibold text-neutral-800">{t(locale, "vehicle.engine_chassis")}</h3>
+  <dl class="spec-grid mt-2 text-sm">
+    {
+      engine.map(([label, value]) => (
+        <div class="flex justify-between gap-2 border-b border-neutral-100 py-1.5">
+          <dt class="text-neutral-500">{label}</dt>
+          <dd class="font-mono text-xs font-medium text-neutral-900">{value}</dd>
+        </div>
+      ))
+    }
+  </dl>
+
+  <h3 class="mt-6 font-semibold text-neutral-800">{t(locale, "vehicle.exterior")}</h3>
+  <dl class="spec-grid mt-2 text-sm">
+    {
+      exterior.map(([label, value]) => (
+        <div class="flex justify-between gap-2 border-b border-neutral-100 py-1.5">
+          <dt class="text-neutral-500">{label}</dt>
+          <dd class="font-mono text-xs font-medium text-neutral-900">{String(value)}</dd>
+        </div>
+      ))
+    }
+  </dl>
+</section>

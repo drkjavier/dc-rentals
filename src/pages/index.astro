@@ -1,0 +1,9 @@
+---
+// src/pages/index.astro — Redirect según Accept-Language (SDD §7.1)
+// prerender=false: el idioma se detecta en runtime (serverless).
+export const prerender = false;
+
+const accept = Astro.request.headers.get("accept-language") ?? "";
+const locale = accept.toLowerCase().includes("fr") ? "fr" : "en";
+return Astro.redirect(`/${locale}`, 302);
+---

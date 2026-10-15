@@ -1,0 +1,95 @@
+---
+// src/components/routes/routes-index-page.astro — Listado de rutas (EN/FR)
+import Layout from "@/components/layout/layout.astro";
+import SeoHead from "@/components/shared/seo-head.astro";
+import Button from "@/components/ui/button.astro";
+import { t, localizedPath, type Locale } from "@/lib/i18n";
+import { getRoutes } from "@/lib/content";
+import { localizeSeo } from "@/lib/seo";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const routes = await getRoutes(locale);
+
+const { canonical, alternates } = localizeSeo(locale, Astro.url.pathname);
+const title =
+  locale === "fr"
+    ? "Itinéraires et destinations | DC Rentals"
+    : "Routes & Destinations | DC Rentals";
+const description = t(locale, "routes_page.subtitle");
+
+const difficultyKey: Record<string, string> = {
+  easy: "routes_page.difficulty_easy",
+  moderate: "routes_page.difficulty_moderate",
+  challenging: "routes_page.difficulty_challenging",
+};
+---
+
+<Layout locale={locale} title={title} description={description}>
+  <SeoHead
+    slot="head"
+    title={title}
+    description={description}
+    canonical={canonical}
+    alternates={alternates}
+    locale={locale}
+  />
+
+  <div class="container-page py-10">
+    <h1 class="font-heading text-3xl font-bold text-neutral-900">
+      {t(locale, "routes_page.title")}
+    </h1>
+    <p class="mt-2 text-neutral-500">{t(locale, "routes_page.subtitle")}</p>
+
+    <div class="mt-10 grid gap-8 lg:grid-cols-2">
+      {
+        routes.map((route) => (
+          <article class="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-[var(--shadow-card)]">
+            <img
+              src={route.image}
+              alt={route.name}
+              width="1200"
+              height="630"
+              loading="lazy"
+              class="aspect-[16/9] w-full object-cover"
+            />
+            <div class="p-6">
+              <h2 class="font-heading text-xl font-bold text-neutral-900">{route.name}</h2>
+              <p class="mt-2 text-sm leading-relaxed text-neutral-600">{route.description}</p>
+              <dl class="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                <div>
+                  <dt class="text-neutral-500">{t(locale, "routes_page.distance")}</dt>
+                  <dd class="font-medium">{route.distance}</dd>
+                </div>
+                <div>
+                  <dt class="text-neutral-500">{t(locale, "routes_page.duration")}</dt>
+                  <dd class="font-medium">{route.duration}</dd>
+                </div>
+                <div>
+                  <dt class="text-neutral-500">{t(locale, "routes_page.difficulty")}</dt>
+                  <dd class="font-medium">{t(locale, difficultyKey[route.difficulty])}</dd>
+                </div>
+                <div>
+                  <dt class="text-neutral-500">{t(locale, "routes_page.best_season")}</dt>
+                  <dd class="font-medium">{route.bestSeason}</dd>
+                </div>
+              </dl>
+              <div class="mt-5">
+                <Button
+                  href={`${localizedPath(locale, "/routes")}/${route.slug}`}
+                  variant="outline"
+                  size="sm"
+                >
+                  {t(locale, "landing.view_route")}
+                </Button>
+              </div>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</Layout>

@@ -1,0 +1,11 @@
+---
+// src/pages/[locale]/vehicles/index.astro — Catálogo EN (/en/vehicles)
+import VehicleCatalogPage from "@/components/vehicle/vehicle-catalog-page.astro";
+
+// El catálogo en francés vive en /fr/vehicules (prefijos localizados §7)
+export function getStaticPaths() {
+  return [{ params: { locale: "en" } }];
+}
+---
+
+<VehicleCatalogPage locale="en" />

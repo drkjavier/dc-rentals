@@ -1,0 +1,38 @@
+---
+// src/components/shared/seo-head.astro — SDD §14.1
+// <head> con metadata + hreflang + Open Graph + JSON-LD opcional
+interface Props {
+  title: string;
+  description: string;
+  canonical: string;
+  image?: string;
+  locale: "en" | "fr";
+  alternates?: Record<string, string>; // { en: "...", fr: "..." }
+  schema?: Record<string, unknown>;
+}
+
+const { title, description, canonical, image, locale, alternates, schema } = Astro.props;
+const ogLocale = locale === "fr" ? "fr_CA" : "en_CA";
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+{
+  alternates &&
+    Object.entries(alternates).map(([lang, href]) => (
+      <link
+        rel="alternate"
+        hreflang={lang === "fr" ? "fr-CA" : "en-CA"}
+        href={href}
+      />
+    ))
+}
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+{image && <meta property="og:image" content={image} />}
+<meta property="og:locale" content={ogLocale} />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+{schema && <script type="application/ld+json" set:html={JSON.stringify(schema)} />}
