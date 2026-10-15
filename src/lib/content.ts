@@ -42,7 +42,10 @@ export interface VehicleSummary {
 }
 
 export function toVehicleSummary(entry: VehicleEntry, locale: Locale = "en"): VehicleSummary {
-  const v = entry.data;
+  // Cast defensivo: el schema Zod SÍ valida los datos en build/dev (falla el
+  // build si hay datos inválidos), pero el typegen de Astro 4.16 no infiere
+  // tipos de schemas importados desde otro módulo (data: any) — ADR-012.
+  const v = entry.data as unknown as VehicleData;
   const location = getLocationById(v.locationId);
   return {
     internalCode: v.internalCode,
@@ -138,7 +141,8 @@ export interface RouteSummary {
 }
 
 function routeSlug(id: string): string {
-  return id.replace(/\.(en|fr)$/, "");
+  // El glob loader conserva la extensión en el id: "rocky-mountains.en.mdx"
+  return id.replace(/\.(en|fr)\.mdx$/, "").replace(/\.mdx$/, "");
 }
 
 export async function getRoutes(locale: Locale): Promise<RouteSummary[]> {
@@ -147,18 +151,21 @@ export async function getRoutes(locale: Locale): Promise<RouteSummary[]> {
     ({ data }) => data.active && data.locale === locale
   );
   return routes
-    .map((r) => ({
-      slug: routeSlug(r.id),
-      name: r.data.name,
-      description: r.data.description,
-      distance: r.data.distance,
-      duration: r.data.duration,
-      difficulty: r.data.difficulty,
-      bestSeason: r.data.bestSeason,
-      image: r.data.image,
-      highlights: r.data.highlights,
-      stops: r.data.stops,
-    }))
+    .map((entry) => {
+      const r = entry.data as unknown as import("@/lib/content-schemas").RouteData;
+      return {
+        slug: routeSlug(entry.id),
+        name: r.name,
+        description: r.description,
+        distance: r.distance,
+        duration: r.duration,
+        difficulty: r.difficulty,
+        bestSeason: r.bestSeason,
+        image: r.image,
+        highlights: r.highlights,
+        stops: r.stops,
+      };
+    })
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENTS.md"],
+  "default_agent": "dc-rentals-orchestrator",
+  "agent": {
+    "dc-rentals-orchestrator": {
+      "description": "Orquestador central del proyecto DC Rentals. Recibe tareas, aplica ciclo SDD+GGVR, decide cuántos agentes invocar (1 o N), y consolida resultados.",
+      "mode": "primary",
+      "prompt": "{file:.opencode/agents/dc-rentals-orchestrator.md}"
+    },
+    "dc-rentals-web-dev": {
+      "description": "Especializado en frontend Astro + React islands, componentes UI, layouts, landing pages, SEO, i18n. Sigue SDD+GGVR para cada tarea.",
+      "mode": "subagent",
+      "prompt": "{file:.opencode/agents/dc-rentals-web-dev.md}"
+    },
+    "dc-rentals-business-logic": {
+      "description": "Especializado en lógica de negocio: pricing engine, availability, API REST endpoints, Zustand stores, validación Zod. Sigue SDD+GGVR.",
+      "mode": "subagent",
+      "prompt": "{file:.opencode/agents/dc-rentals-business-logic.md}"
+    },
+    "dc-rentals-data-ops": {
+      "description": "Especializado en datos: Content Collections, Supabase schema, testing (unit+e2e), CI/CD, Docker. Sigue SDD+GGVR.",
+      "mode": "subagent",
+      "prompt": "{file:.opencode/agents/dc-rentals-data-ops.md}"
+    }
+  },
+  "skills": {
+    "paths": ["/home/user/.config/opencode/skills"]
+  },
+  "mcp": {
+    "context7": {
+      "enabled": true
+    }
+  }
+}

@@ -115,7 +115,8 @@ const galleryImages = vehicle.images.map((img) => ({
               {vehicle.availableFromDate && (
                 <p class="mt-1">
                   {t(locale, "availability.next_available", {
-                    date: vehicle.availableFromDate.toISOString().split("T")[0],
+                    // Defensivo: en runtime el dato puede llegar como string
+                    date: new Date(vehicle.availableFromDate).toISOString().split("T")[0],
                   })}
                 </p>
               )}

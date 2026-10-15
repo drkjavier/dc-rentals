@@ -33,5 +33,11 @@
       }
     }
   ],
-  "ignorePatterns": ["dist/", ".astro/", "node_modules/", "coverage/"]
+  "ignorePatterns": [
+    "dist/",
+    ".astro/",
+    "node_modules/",
+    "coverage/",
+    "src/env.d.ts"
+  ]
 }

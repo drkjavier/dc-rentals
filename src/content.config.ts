@@ -3,12 +3,14 @@
 // reutilizarlos en los tests unitarios (decisión operativa).
 import { defineCollection } from "astro:content";
 import { glob } from "astro/loaders";
+// Imports relativos: el generador de tipos de Content Collections resuelve
+// mejor los schemas así (data deja de ser `any` en CollectionEntry).
 import {
   vehicleSchema,
   routeSchema,
   blogSchema,
   faqSchema,
-} from "@/lib/content-schemas";
+} from "./lib/content-schemas";
 
 const vehicles = defineCollection({
   loader: glob({ pattern: "vehicles/*.json", base: "./src/content" }),

@@ -148,12 +148,11 @@ export function ImageGallery({ images, locale }: ImageGalleryProps) {
       )}
 
       {/* Rail de miniaturas */}
-      <div className="mt-3 flex gap-2 overflow-x-auto pb-1" role="list">
+      <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
         {visible.map((img, index) => (
           <button
             key={img.url}
             type="button"
-            role="listitem"
             onClick={(e) => {
               setCurrentIndex(index);
               openLightbox(index, e.currentTarget);
@@ -172,6 +171,9 @@ export function ImageGallery({ images, locale }: ImageGalleryProps) {
 
       {/* Lightbox */}
       {lightboxOpen && (
+        // Backdrop: cerrar al hacer click fuera. Cierre con Esc y gestión de
+        // foco implementados arriba (keydown + devolución del foco al opener).
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
         <div
           role="dialog"
           aria-modal="true"
@@ -179,6 +181,7 @@ export function ImageGallery({ images, locale }: ImageGalleryProps) {
           onClick={closeLightbox}
           className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/90 p-4 motion-safe:animate-in motion-safe:fade-in"
         >
+          {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
           <div className="relative max-h-full w-full max-w-5xl" onClick={(e) => e.stopPropagation()}>
             <button
               ref={closeRef}

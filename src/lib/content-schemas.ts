@@ -3,7 +3,9 @@
 // Nota operativa (reports/decisions.md): los schemas viven aquí (no inline en
 // content.config.ts) para que sean importables por los tests unitarios de
 // Vitest, que no pueden resolver el módulo `astro:content`.
-import { z } from "zod";
+// Se usa `astro/zod` (misma API) para que Astro infiera los tipos de las
+// colecciones (si no, entry.data queda `any` en los tipos generados).
+import { z } from "astro/zod";
 
 export const vehicleType = z.enum([
   "CLASS_A",

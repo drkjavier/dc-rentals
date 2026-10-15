@@ -9,7 +9,7 @@ describe("booking-store", () => {
   });
 
   it("calculates nights between dates", () => {
-    const { setDates, nights } = useBookingStore.getState();
+    const { setDates } = useBookingStore.getState();
     setDates("2027-05-10", "2027-05-15");
     expect(useBookingStore.getState().nights()).toBe(5);
   });
