@@ -116,7 +116,7 @@ tools:
 ## Model
 
 ```yaml
-model: opencode/m2.7
+model: xiaomi/mimo-v2.5
 temperature: 0.1
 color: "#059669"
 ```
