@@ -1,0 +1,96 @@
+/* src/styles/globals.css */
+/* SDD: TECHNICAL-SPEC.md §6.1 — CSS custom properties + clases base */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand colors */
+    --color-primary: 29 64 175; /* #1E40AF */
+    --color-secondary: 5 150 105; /* #059669 */
+    --color-accent: 217 119 6; /* #D97706 */
+    --color-danger: 220 38 38; /* #DC2626 */
+    --color-warning: 245 158 11; /* #F59E0B */
+
+    /* Status colors */
+    --color-status-available: 5 150 105;
+    --color-status-occupied: 220 38 38;
+    --color-status-maintenance: 245 158 11;
+    --color-status-partial: 217 119 6;
+    --color-status-upcoming: 59 130 246;
+
+    /* Spacing scale */
+    --space-section: 5rem;
+    --space-block: 3rem;
+
+    /* Typography scale */
+    --text-hero: 3rem;
+    --text-h1: 2.25rem;
+    --text-h2: 1.875rem;
+    --text-h3: 1.5rem;
+    --text-body: 1rem;
+    --text-small: 0.875rem;
+    --text-specs: 0.875rem;
+
+    /* Border radius */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+
+    /* Shadows */
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-card-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+    /* Transitions */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Focus visible accesible (§18) */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-primary ring-offset-2;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-spacing {
+    @apply py-16 sm:py-20 lg:py-24;
+  }
+
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .spec-grid {
+    @apply grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3;
+  }
+
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-brand-primary focus:px-4 focus:py-2 focus:text-white;
+  }
+}
