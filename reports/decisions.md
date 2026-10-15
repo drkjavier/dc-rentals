@@ -1,0 +1,48 @@
+# reports/decisions.md — Bitácora de decisiones (ADRs operativos)
+
+> Registro de decisiones del equipo de agentes. Las ADR-001..011 viven en
+> `TECHNICAL-SPEC.md` §20 (SDD). Aquí se registran las decisiones operativas
+> tomadas durante la ejecución.
+
+## ADR-012: Tailwind vía PostCSS directo (no @astrojs/tailwind)
+
+- **Fecha**: 2026-10-15
+- **Decisión**: Conectar Tailwind con `postcss.config.mjs` (`tailwindcss` + `autoprefixer`) en lugar de la integración `@astrojs/tailwind`.
+- **Contexto**: `@astrojs/tailwind@0.2.5` (única versión publicada) crashea con Astro 4.16 (`Cannot read properties of undefined (reading 'postcss')`) porque Astro 4.16 eliminó `config.style.postcss` de la config resuelta.
+- **Impacto**: Ninguno en resultado visual ni configuración: `tailwind.config.mjs`, tokens §6 y `globals.css` (directivas `@tailwind`) son idénticos. `applyBaseStyles:false` se logra importando `globals.css` en `layout.astro`.
+
+## ADR-013: @astrojs/sitemap fijado a 3.1.x
+
+- **Fecha**: 2026-10-15
+- **Decisión**: Fijar `@astrojs/sitemap@3.1.6` y omitir la option `i18n` del sitemap.
+- **Contexto**: `@astrojs/sitemap@3.7` depende del hook `astro:routes:resolved` (Astro 5); con Astro 4.16 `_routes` queda undefined y el build falla en `astro:build:done`. Además el branch i18n de 3.7 rompe con `routes` undefined en modo híbrido.
+- **Mitigación SEO**: los tags `hreflang`/`alternate` se emiten por página con `seo-head.astro` (§14.1), por lo que la cobertura de idiomas del sitemap no es crítica.
+
+## ADR-014: Degradación graceful sin Supabase (acordada con el Orquestador)
+
+- **Fecha**: 2026-10-15
+- **Decisión**: Sin `PUBLIC_SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`, el endpoint de disponibilidad responde con todos los días `available`, `availability-check` responde `available: true` y `POST /api/reservations` responde **503 `DATABASE_NOT_CONFIGURED`** con mensaje claro. El calendario no se rompe y la reserva no falla en silencio.
+- **Razón**: no hay proyecto Supabase real en este entorno; el código (schema, RLS, clientes, endpoints) queda listo para conectar cuando existan las claves.
+
+## ADR-015: Schemas Zod en `src/lib/content-schemas.ts`
+
+- **Fecha**: 2026-10-15
+- **Decisión**: Los schemas de Content Collections viven en `src/lib/content-schemas.ts` (importados por `content.config.ts`) para poder testearlos con Vitest sin resolver `astro:content`. Se usa `astro/zod` (misma API que `zod`).
+- **Limitación conocida**: el typegen de Astro 4.16 escribe `data: any` y `ContentConfig = never` cuando los schemas vienen de otro módulo; los datos SÍ se validan con Zod en build/dev (build falla con datos inválidos). `content.ts` aplica casts tipados explícitos (`as unknown as VehicleData`) — sin pérdida de validación runtime.
+
+## ADR-016: Filtros del catálogo sobre el DOM SSR (sin fetch a /api/vehicles.json)
+
+- **Fecha**: 2026-10-15
+- **Decisión**: El island `vehicle-filters` filtra/ordena las tarjetas SSR del catálogo mediante `data-*` attributes (hide + `style.order`) en vez de fetchear `/api/vehicles.json` y re-renderizar.
+- **Razón**: mantiene el catálogo 100% indexable y visible sin JS (mejor SEO/CLS que el enfoque fetch del §9.1), con la misma UX. El endpoint `GET /api/vehicles.json` se implementa igual (contrato §8.1) para consumidores futuros.
+
+## ADR-017: Reviews fuera del MVP
+
+- **Fecha**: 2026-10-15
+- **Decisión**: La sección de reseñas (`ReviewList`) no se implementa en esta fase; `TECHNICAL-SPEC.md` §2.1 difiere las reseñas a "Fase futura (Supabase)". La ficha no renderiza ratings inventados.
+- **Verificado en**: `TECHNICAL-SPEC.md` §2.1 (estrategia de datos) — Reseñas = Fase futura.
+
+## ADR-018: Placeholders SVG y fotos reales
+
+- **Fecha**: 2026-10-15
+- **Decisión**: Todas las imágenes del MVP son placeholders SVG generados por `scripts/generate-placeholders.mjs` (convención §13.2, sufijo `.svg`). Las fotos reales se sustituyen en `public/images/` sin tocar código (mismas rutas).
