@@ -2,8 +2,8 @@
 // Lista los trucks de Supabase, permite crear nuevos y editar existentes.
 // El formulario envía el objeto completo; el endpoint valida con vehicleSchema
 // (Zod), guarda en la tabla vehicles_catalog y dispara el Deploy Hook de Vercel.
-import { useCallback, useEffect, useState } from "react";
-import { adminFetch, ApiError } from "@/lib/admin/api-client";
+import { useCallback, useEffect, useState, type ChangeEvent } from "react";
+import { adminFetch, fileToBase64, ApiError } from "@/lib/admin/api-client";
 
 interface VehicleSummary {
   internalCode: string;
@@ -54,6 +54,42 @@ const VEHICLE_TYPES = [
   "CAMPER_VAN",
 ];
 const STATUSES = ["AVAILABLE", "OCCUPIED", "MAINTENANCE", "PARTIALLY_BOOKED", "COMING_SOON"];
+
+// ─── Galería de fotos (admin) ──────────────────────────────────────
+// Cada foto guarda la URL pública de Storage y los metadatos que exige
+// `imageSchema` (content-schemas.ts). El frontend público
+// (image-gallery.tsx) ya renderiza este array con lightbox y categorías.
+const IMAGE_CATEGORIES = [
+  "EXTERIOR",
+  "KITCHEN",
+  "BATHROOM",
+  "BEDROOM",
+  "LIVING",
+  "FLOORPLAN",
+  "DETAIL",
+] as const;
+
+/** Máximo de fotos por truck (decisión de producto). */
+const MAX_GALLERY_IMAGES = 12;
+
+interface AdminGalleryImage {
+  url: string;
+  alt: string;
+  altFr?: string;
+  category: string;
+  sortOrder: number;
+}
+
+/** Lee el array `images` del vehículo de forma tolerante (puede venir vacío). */
+function readImages(vehicle: Record<string, unknown>): AdminGalleryImage[] {
+  const raw = vehicle.images;
+  return Array.isArray(raw) ? (raw as AdminGalleryImage[]) : [];
+}
+
+/** Quita la extensión del archivo para usarla como texto alternativo inicial. */
+function baseName(fileName: string): string {
+  return fileName.replace(/\.[a-z0-9]+$/i, "");
+}
 
 export function VehiclesPanel() {
   const [vehicles, setVehicles] = useState<VehicleSummary[]>([]);
@@ -476,6 +512,21 @@ function VehicleForm({
       </section>
 
       <section className="rounded-xl border border-neutral-200 bg-white p-6">
+        <h3 className="font-semibold">Galería de fotos</h3>
+        <p className="mt-1 text-xs text-neutral-500">
+          Sube varias fotos del truck (exteriores e interiores). Se publican en la
+          ficha pública con lightbox y filtro por categoría. Máximo{" "}
+          {MAX_GALLERY_IMAGES} fotos.
+        </p>
+        <GalleryManager
+          images={readImages(vehicle)}
+          onChange={(imgs) => onChange("images", imgs)}
+          onSetMain={(url) => onChange("mainImage", url)}
+          mainImage={String(vehicle.mainImage ?? "")}
+        />
+      </section>
+
+      <section className="rounded-xl border border-neutral-200 bg-white p-6">
         <h3 className="font-semibold">Especificaciones técnicas</h3>
         <div className="mt-3 grid gap-4 sm:grid-cols-3">
           <SpecField label="Largo (ft)" value={specs.lengthFt} onChange={(v) => setSpec("lengthFt", v)} />
@@ -512,6 +563,249 @@ function VehicleForm({
           Cancelar
         </button>
       </div>
+    </div>
+  );
+}
+
+function GalleryManager({
+  images,
+  onChange,
+  onSetMain,
+  mainImage,
+}: {
+  images: AdminGalleryImage[];
+  onChange: (imgs: AdminGalleryImage[]) => void;
+  onSetMain: (url: string) => void;
+  mainImage: string;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [msg, setMsg] = useState<{ kind: "ok" | "warn" | "err"; msg: string } | null>(null);
+
+  /** Reconsecuencia el sortOrder según el índice tras mover/borrar. */
+  function withOrder(imgs: AdminGalleryImage[]): AdminGalleryImage[] {
+    return imgs.map((img, i) => ({ ...img, sortOrder: i }));
+  }
+
+  function update(index: number, patch: Partial<AdminGalleryImage>) {
+    const next = images.map((img, i) => (i === index ? { ...img, ...patch } : img));
+    onChange(next);
+    setMsg(null);
+  }
+
+  function remove(index: number) {
+    onChange(withOrder(images.filter((_, i) => i !== index)));
+    setMsg(null);
+  }
+
+  function move(index: number, dir: -1 | 1) {
+    const target = index + dir;
+    if (target < 0 || target >= images.length) return;
+    const next = [...images];
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(withOrder(next));
+  }
+
+  async function handleUpload(e: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    // Permite volver a elegir el mismo archivo tras un error
+    e.target.value = "";
+    if (files.length === 0) return;
+
+    const remaining = MAX_GALLERY_IMAGES - images.length;
+    if (remaining <= 0) {
+      setMsg({ kind: "err", msg: `Máximo ${MAX_GALLERY_IMAGES} fotos por truck.` });
+      return;
+    }
+    const toUpload = files.slice(0, remaining);
+    const skipped = files.length - toUpload.length;
+
+    setUploading(true);
+    setMsg(null);
+    const uploaded: AdminGalleryImage[] = [];
+    try {
+      for (const file of toUpload) {
+        const base64 = await fileToBase64(file);
+        // ADR-022: la respuesta trae la URL PÚBLICA de Storage (`url`).
+        const res = await adminFetch<{ url: string }>("/api/admin/upload", {
+          method: "POST",
+          body: { name: file.name, dataBase64: base64 },
+        });
+        uploaded.push({
+          url: res.url,
+          alt: baseName(file.name),
+          altFr: "",
+          // Decisión: EXTERIOR por defecto, editable con el desplegable.
+          category: "EXTERIOR",
+          sortOrder: images.length + uploaded.length,
+        });
+      }
+      onChange([...images, ...uploaded]);
+
+      if (skipped > 0) {
+        setMsg({
+          kind: "warn",
+          msg: `Subidas ${uploaded.length} fotos. Se ignoraron ${skipped} para no superar el límite de ${MAX_GALLERY_IMAGES}.`,
+        });
+      } else {
+        setMsg({ kind: "ok", msg: `${uploaded.length} foto(s) subida(s). Recuerda pulsar "Guardar truck".` });
+      }
+    } catch (err) {
+      // Conservamos las fotos ya subidas en esta tanda para no perderlas.
+      if (uploaded.length > 0) onChange([...images, ...uploaded]);
+      setMsg({
+        kind: "err",
+        msg:
+          (err instanceof ApiError ? err.message : "Error al subir la imagen") +
+          (uploaded.length > 0 ? ` (${uploaded.length} fotos sí se subieron.)` : ""),
+      });
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="mt-3">
+      {/* Botón de subida + contador */}
+      <div className="flex items-center justify-between gap-3">
+        <label
+          className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-neutral-50 ${
+            images.length >= MAX_GALLERY_IMAGES ? "cursor-not-allowed opacity-50" : ""
+          }`}
+        >
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/svg+xml,image/avif"
+            multiple
+            className="sr-only"
+            disabled={uploading || images.length >= MAX_GALLERY_IMAGES}
+            onChange={handleUpload}
+          />
+          {uploading ? "Subiendo…" : "＋ Subir fotos"}
+        </label>
+        <span className="text-xs text-neutral-500">
+          {images.length} / {MAX_GALLERY_IMAGES}
+        </span>
+      </div>
+
+      {msg && (
+        <p
+          role="status"
+          className={`mt-3 rounded-lg px-3 py-2 text-xs ${
+            msg.kind === "ok"
+              ? "bg-green-50 text-green-800"
+              : msg.kind === "warn"
+                ? "bg-amber-50 text-amber-800"
+                : "bg-red-50 text-red-700"
+          }`}
+        >
+          {msg.msg}
+        </p>
+      )}
+
+      {/* Lista de fotos */}
+      {images.length === 0 ? (
+        <p className="mt-4 rounded-lg border border-dashed border-neutral-200 px-4 py-6 text-center text-sm text-neutral-400">
+          Sin fotos todavía. Sube varias imágenes para que el cliente vea el truck
+          desde varios puntos de vista.
+        </p>
+      ) : (
+        <ul className="mt-4 space-y-3">
+          {images.map((img, index) => (
+            <li
+              key={img.url + index}
+              className="flex flex-wrap items-start gap-3 rounded-lg border border-neutral-200 p-3"
+            >
+              <img
+                src={img.url}
+                alt={img.alt}
+                className="h-16 w-24 shrink-0 rounded-md border border-neutral-200 object-cover"
+              />
+              <div className="grid min-w-[220px] flex-1 gap-2 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500" htmlFor={`alt-${index}`}>
+                    Texto alt (EN)
+                  </label>
+                  <input
+                    id={`alt-${index}`}
+                    className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-1 text-sm"
+                    value={img.alt ?? ""}
+                    onChange={(e) => update(index, { alt: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500" htmlFor={`altFr-${index}`}>
+                    Texto alt (FR)
+                  </label>
+                  <input
+                    id={`altFr-${index}`}
+                    className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-1 text-sm"
+                    value={img.altFr ?? ""}
+                    onChange={(e) => update(index, { altFr: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500" htmlFor={`cat-${index}`}>
+                    Categoría
+                  </label>
+                  <select
+                    id={`cat-${index}`}
+                    className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-1 text-sm"
+                    value={img.category}
+                    onChange={(e) => update(index, { category: e.target.value })}
+                  >
+                    {IMAGE_CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {/* Acciones */}
+              <div className="flex shrink-0 flex-col gap-1">
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => move(index, -1)}
+                    disabled={index === 0}
+                    aria-label="Mover antes"
+                    className="rounded border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100 disabled:opacity-40"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => move(index, 1)}
+                    disabled={index === images.length - 1}
+                    aria-label="Mover después"
+                    className="rounded border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100 disabled:opacity-40"
+                  >
+                    ↓
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onSetMain(img.url)}
+                  className={`rounded border px-2 py-1 text-xs ${
+                    mainImage === img.url
+                      ? "border-brand-primary bg-brand-primary/10 text-brand-primary"
+                      : "border-neutral-300 hover:bg-neutral-100"
+                  }`}
+                >
+                  {mainImage === img.url ? "✓ Principal" : "Hacer principal"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(index)}
+                  className="rounded border border-red-200 px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
