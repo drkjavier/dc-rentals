@@ -19,6 +19,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
+    "seed:catalog": "npx tsx scripts/seed-catalog.ts",
     "db:login": "supabase login",
     "db:link": "supabase link --project-ref towodmbmszrsbirsjzdj",
     "db:push": "supabase db push",

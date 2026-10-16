@@ -7,7 +7,7 @@ import { verifyAdminToken, isAuthConfigured } from "@/lib/admin/auth";
 // import.meta.env en Vitest: simulamos ADMIN_TOKEN por test
 function setEnvToken(token: string | undefined) {
   if (token === undefined) {
-    // @ts-expect-error permitimos borrar la env para el test
+    // permitimos borrar la env para el test (tipo compatible con ImportMetaEnv)
     delete import.meta.env.ADMIN_TOKEN;
   } else {
     import.meta.env.ADMIN_TOKEN = token;

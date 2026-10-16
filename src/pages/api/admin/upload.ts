@@ -1,11 +1,19 @@
-// src/pages/api/admin/upload.ts — ADR-020
-// POST: sube una imagen (base64) a public/images/admin/<nombre> via GitHub.
+// src/pages/api/admin/upload.ts — ADR-020 + ADR-022
+// POST: sube una imagen (base64) al bucket Storage `admin-images` en
+// admin/<AAAA-MM>/<nombre> y responde con su URL pública.
 // Cuerpo: { name: "hero-new.jpg", dataBase64: "..." }
 import type { APIRoute } from "astro";
-import { requireAdmin, json } from "@/lib/admin/guard";
-import { putImage } from "@/lib/admin/github";
+import { requireAdmin, json, databaseNotConfigured } from "@/lib/admin/guard";
+import { triggerDeployHook } from "@/lib/admin/deploy";
+import { getSupabaseServer, isSupabaseConfigured } from "@/lib/supabase";
 
 export const prerender = false;
+
+/** Bucket público en lectura, escritura solo service role (ADR-022). */
+export const STORAGE_BUCKET = "admin-images";
+
+/** Límite de tamaño (1 MB, heredado de la Contents API de GitHub). */
+export const MAX_UPLOAD_BYTES = 1_000_000;
 
 // Solo formatos seguros para web; el nombre se sanea para evitar path traversal
 const SAFE_NAME_RE = /^[a-z0-9][a-z0-9._-]*\.(png|jpe?g|webp|svg|avif)$/i;
@@ -21,6 +29,8 @@ const EXT_MIME: Record<string, string> = {
 export const POST: APIRoute = async (context) => {
   const guard = requireAdmin(context);
   if (!guard.ok) return guard.response;
+  if (!isSupabaseConfigured()) return databaseNotConfigured();
+  const supabase = getSupabaseServer()!;
 
   let body: { name?: unknown; dataBase64?: unknown };
   try {
@@ -48,24 +58,42 @@ export const POST: APIRoute = async (context) => {
   const ext = name.split(".").pop()!.toLowerCase();
   const mime = EXT_MIME[ext];
 
-  // Guardamos en una carpeta única por fecha para evitar colisiones y caché vieja
+  const bytes = Buffer.from(dataBase64, "base64");
+  if (bytes.length === 0) {
+    return json({ error: "dataBase64 no contiene datos decodificables" }, 400);
+  }
+  if (bytes.length > MAX_UPLOAD_BYTES) {
+    return json(
+      {
+        error: "FILE_TOO_LARGE",
+        message: `La imagen supera el límite de 1 MB (${Math.round(
+          bytes.length / 1024
+        )} KB). Comprímela e inténtalo de nuevo.`,
+      },
+      413
+    );
+  }
+
+  // Carpeta única por fecha para evitar colisiones y caché vieja
   const now = new Date();
   const yyyy = now.getUTCFullYear();
   const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
-  const path = `public/images/admin/${yyyy}-${mm}/${name}`;
+  const path = `admin/${yyyy}-${mm}/${name}`;
 
-  const result = await putImage(
-    guard.github,
-    path,
-    dataBase64,
-    `content(images): upload ${path}`
-  );
-  if (!result.ok) {
-    // 413 viene del límite de tamaño ya validado en el cliente y el server
-    return json({ error: result.error }, result.status);
+  const { error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .upload(path, bytes, { contentType: mime });
+  if (error) {
+    return json({ error: `Storage: ${error.message}` }, 500);
   }
 
-  // La ruta pública que consume el sitio (sin prefijo public/)
-  const publicPath = `/${path.replace(/^public\//, "")}`;
-  return json({ ok: true, path: publicPath, mime, commitSha: result.data.commitSha }, 201);
+  const { data: publicUrl } = supabase.storage
+    .from(STORAGE_BUCKET)
+    .getPublicUrl(path);
+
+  const { triggered } = await triggerDeployHook(`content(images): upload ${path}`);
+  return json(
+    { ok: true, url: publicUrl.publicUrl, mime, deploy: triggered ? "triggered" : "skipped" },
+    201
+  );
 };

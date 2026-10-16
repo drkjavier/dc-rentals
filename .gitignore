@@ -29,3 +29,4 @@ test-results/
 
 # vercel
 .vercel/
+supabase/.temp/

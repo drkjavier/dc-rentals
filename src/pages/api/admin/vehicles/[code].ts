@@ -1,26 +1,33 @@
-// src/pages/api/admin/vehicles/[code].ts — ADR-020
+// src/pages/api/admin/vehicles/[code].ts — ADR-020 + ADR-022
 // GET: devuelve un truck completo para editar en el formulario.
-// PUT: valida con vehicleSchema y commitea los cambios.
+// PUT: valida con vehicleSchema y hace upsert en vehicles_catalog.
+// DELETE no está soportado: se oculta con active=false (sin perder historial).
 import type { APIRoute } from "astro";
-import { requireAdmin, json } from "@/lib/admin/guard";
-import { getFile, putFile } from "@/lib/admin/github";
+import { requireAdmin, json, databaseNotConfigured } from "@/lib/admin/guard";
+import { getVehicleByCode, upsertVehicle } from "@/lib/admin/catalog-db";
+import { triggerDeployHook } from "@/lib/admin/deploy";
 import { vehicleSchema } from "@/lib/content-schemas";
+import { isSupabaseConfigured } from "@/lib/supabase";
 
 export const prerender = false;
 
 export const GET: APIRoute = async (context) => {
   const guard = requireAdmin(context);
   if (!guard.ok) return guard.response;
+  if (!isSupabaseConfigured()) return databaseNotConfigured();
 
-  const code = context.params.code!.toLowerCase();
-  const file = await getFile(guard.github, `src/content/vehicles/${code}.json`);
-  if (!file.ok) return json({ error: file.error }, file.status);
-  return json({ vehicle: JSON.parse(file.data) });
+  const code = context.params.code!;
+  const vehicle = await getVehicleByCode(code);
+  if (!vehicle) {
+    return json({ error: `No existe ningún truck con código ${code}` }, 404);
+  }
+  return json({ vehicle });
 };
 
 export const PUT: APIRoute = async (context) => {
   const guard = requireAdmin(context);
   if (!guard.ok) return guard.response;
+  if (!isSupabaseConfigured()) return databaseNotConfigured();
 
   const code = context.params.code!.toLowerCase();
   let body: unknown;
@@ -38,31 +45,35 @@ export const PUT: APIRoute = async (context) => {
     );
   }
 
-  // El internalCode del payload debe coincidir con el archivo (evita renombres
-  // accidentales que romperían enlaces existentes)
+  // El internalCode del payload debe coincidir con el código de la URL
+  // (evita renombres accidentales que romperían enlaces existentes)
   if (parsed.data.internalCode.toLowerCase() !== code) {
     return json(
       {
         error: "CODE_MISMATCH",
-        message: `El internalCode ${parsed.data.internalCode} no coincide con el archivo ${code}.json`,
+        message: `El internalCode ${parsed.data.internalCode} no coincide con el código ${code} de la URL.`,
       },
       400
     );
   }
 
-  const existing = await getFile(guard.github, `src/content/vehicles/${code}.json`);
-  if (!existing.ok) return json({ error: existing.error }, existing.status);
+  const existing = await getVehicleByCode(code);
+  if (!existing) {
+    return json({ error: `No existe ningún truck con código ${code}` }, 404);
+  }
 
-  const content = `${JSON.stringify(parsed.data, null, 2)}\n`;
-  const result = await putFile(
-    guard.github,
-    `src/content/vehicles/${code}.json`,
-    content,
-    `content(vehicles): update ${parsed.data.internalCode} — ${parsed.data.name}`,
-    undefined // el sha se resuelve internamente vía 409-retry
+  const saved = await upsertVehicle(parsed.data);
+  if (!saved) {
+    return json(
+      { error: "WRITE_FAILED", message: "No se pudo actualizar el truck en vehicles_catalog." },
+      500
+    );
+  }
+
+  const { triggered } = await triggerDeployHook(
+    `content(vehicles): update ${parsed.data.internalCode} — ${parsed.data.name}`
   );
-  if (!result.ok) return json({ error: result.error }, result.status);
-  return json({ ok: true, commitSha: result.data.commitSha });
+  return json({ ok: true, deploy: triggered ? "triggered" : "skipped" });
 };
 
 export const DELETE: APIRoute = async (context) => {

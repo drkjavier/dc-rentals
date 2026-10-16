@@ -1,5 +1,6 @@
 // src/components/admin/admin-panel.tsx — Island del panel de administración
-// ADR-020 — pestañas: Configuración (logo/hero/brand), Trucks y Rutas.
+// ADR-020 + ADR-022 — pestañas: Configuración (logo/hero/brand), Trucks y Rutas.
+// El backend escribe en Supabase y dispara el Deploy Hook de Vercel.
 // Flujo: token → sessionStorage → Authorization: Bearer en cada llamada.
 import { useEffect, useState } from "react";
 import {
@@ -55,9 +56,17 @@ export function AdminPanel() {
       setTokenInput("");
     } catch (err) {
       clearToken();
-      setLoginError(
-        err instanceof ApiError ? err.message : "No se pudo verificar el token"
-      );
+      if (err instanceof ApiError && err.status === 401) {
+        setLoginError("Token inválido o expirado. Inténtalo de nuevo.");
+      } else if (err instanceof ApiError && err.status === 503) {
+        setLoginError(
+          "Supabase no está configurado en el entorno. Define PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY y VERCEL_DEPLOY_HOOK en Vercel."
+        );
+      } else {
+        setLoginError(
+          err instanceof ApiError ? err.message : "No se pudo verificar el token"
+        );
+      }
     }
   }
 

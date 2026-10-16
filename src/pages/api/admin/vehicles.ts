@@ -1,14 +1,17 @@
-// src/pages/api/admin/vehicles.ts — ADR-020
+// src/pages/api/admin/vehicles.ts — ADR-020 + ADR-022
 // GET: lista resumida de trucks (code, name, type, status, active, slug).
-// POST: crea src/content/vehicles/<code>.json validado con vehicleSchema.
+// POST: crea un truck validado con vehicleSchema en vehicles_catalog.
+// En éxito dispara el Deploy Hook de Vercel y responde deploy=triggered|skipped.
 import type { APIRoute } from "astro";
-import { requireAdmin, json } from "@/lib/admin/guard";
-import { getFile, putFile } from "@/lib/admin/github";
+import { requireAdmin, json, databaseNotConfigured } from "@/lib/admin/guard";
+import { listVehicles, getVehicleByCode, upsertVehicle } from "@/lib/admin/catalog-db";
+import { triggerDeployHook } from "@/lib/admin/deploy";
 import { vehicleSchema } from "@/lib/content-schemas";
+import { isSupabaseConfigured } from "@/lib/supabase";
 
 export const prerender = false;
 
-/** dc-c3-001.json (kebab-case del internalCode) */
+/** dc-c3-001.json (kebab-case del internalCode) — shape legacy del panel */
 export function vehicleFileName(internalCode: string): string {
   return `${internalCode.toLowerCase()}.json`;
 }
@@ -16,47 +19,34 @@ export function vehicleFileName(internalCode: string): string {
 export const GET: APIRoute = async (context) => {
   const guard = requireAdmin(context);
   if (!guard.ok) return guard.response;
+  if (!isSupabaseConfigured()) return databaseNotConfigured();
 
-  // El listado se lee del contenido YA compilado (Content Collections) vía un
-  // path fijo: pedimos el índice de vehicles/ a la Contents API de GitHub.
-  const url = `https://api.github.com/repos/${guard.github.repo}/contents/src/content/vehicles?ref=${guard.github.branch}`;
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${guard.github.token}`,
-      Accept: "application/vnd.github+json",
-      "User-Agent": "dc-rentals-admin",
-    },
-  });
-  if (!res.ok) return json({ error: `GitHub API ${res.status}` }, res.status);
-  const entries = (await res.json()) as Array<{ name: string; path: string }>;
-
-  const vehicles = [];
-  for (const entry of entries.filter((e) => e.name.endsWith(".json"))) {
-    const file = await getFile(guard.github, entry.path);
-    if (!file.ok) continue;
-    try {
-      const data = JSON.parse(file.data);
-      vehicles.push({
-        internalCode: data.internalCode,
-        name: data.name,
-        type: data.type,
-        status: data.status,
-        active: data.active,
-        featured: data.featured,
-        slug: data.slug,
-        pricePerNightCAD: data.pricePerNightCAD,
-        fileName: entry.name,
-      });
-    } catch {
-      // archivo corrupto: lo omitimos del listado pero no rompemos la respuesta
-    }
+  const vehicles = await listVehicles();
+  if (!vehicles) {
+    return json(
+      { error: "DATABASE_ERROR", message: "No se pudo leer vehicles_catalog." },
+      500
+    );
   }
-  return json({ vehicles });
+  return json({
+    vehicles: vehicles.map((v) => ({
+      internalCode: v.internalCode,
+      name: v.name,
+      type: v.type,
+      status: v.status,
+      active: v.active,
+      featured: v.featured,
+      slug: v.slug,
+      pricePerNightCAD: v.pricePerNightCAD,
+      fileName: vehicleFileName(v.internalCode),
+    })),
+  });
 };
 
 export const POST: APIRoute = async (context) => {
   const guard = requireAdmin(context);
   if (!guard.ok) return guard.response;
+  if (!isSupabaseConfigured()) return databaseNotConfigured();
 
   let body: unknown;
   try {
@@ -73,11 +63,9 @@ export const POST: APIRoute = async (context) => {
     );
   }
 
-  const fileName = vehicleFileName(parsed.data.internalCode);
-
   // No pisar un truck existente: el cliente debe usar PUT para editar
-  const existing = await getFile(guard.github, `src/content/vehicles/${fileName}`);
-  if (existing.ok) {
+  const existing = await getVehicleByCode(parsed.data.internalCode);
+  if (existing) {
     return json(
       {
         error: "ALREADY_EXISTS",
@@ -87,13 +75,16 @@ export const POST: APIRoute = async (context) => {
     );
   }
 
-  const content = `${JSON.stringify(parsed.data, null, 2)}\n`;
-  const result = await putFile(
-    guard.github,
-    `src/content/vehicles/${fileName}`,
-    content,
+  const saved = await upsertVehicle(parsed.data);
+  if (!saved) {
+    return json(
+      { error: "WRITE_FAILED", message: "No se pudo guardar el truck en vehicles_catalog." },
+      500
+    );
+  }
+
+  const { triggered } = await triggerDeployHook(
     `content(vehicles): add ${parsed.data.internalCode} — ${parsed.data.name}`
   );
-  if (!result.ok) return json({ error: result.error }, result.status);
-  return json({ ok: true, commitSha: result.data.commitSha }, 201);
+  return json({ ok: true, deploy: triggered ? "triggered" : "skipped" }, 201);
 };

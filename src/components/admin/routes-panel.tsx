@@ -1,6 +1,7 @@
-// src/components/admin/routes-panel.tsx — Pestaña "Rutas" (ADR-020)
-// Lista rutas agrupadas por slug (en/fr) y permite editar el frontmatter
-// (nombre, paradas, highlights) y el cuerpo markdown de cada idioma.
+// src/components/admin/routes-panel.tsx — Pestaña "Rutas" (ADR-020 + ADR-022)
+// Lista rutas agrupadas por slug (en/fr) desde Supabase (routes_catalog) y
+// permite editar el frontmatter (nombre, paradas, highlights) y el cuerpo
+// markdown de cada idioma. Cada guardado dispara el Deploy Hook de Vercel.
 import { useCallback, useEffect, useState } from "react";
 import { adminFetch, ApiError } from "@/lib/admin/api-client";
 
@@ -24,11 +25,32 @@ interface RouteVersion {
   body: string;
 }
 
-type Status = { kind: "ok" | "err"; msg: string } | null;
+type Status = { kind: "ok" | "warn" | "err"; msg: string } | null;
 
 const input =
   "mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/30";
 const label = "block text-sm font-medium text-neutral-700";
+
+/** Mensaje claro para el operador cuando Supabase no está en el entorno (ADR-022). */
+function describeError(err: unknown, fallback: string): string {
+  if (err instanceof ApiError) {
+    if (err.status === 503) {
+      return "Supabase no está configurado en el entorno. Define PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY y VERCEL_DEPLOY_HOOK en Vercel.";
+    }
+    return err.message;
+  }
+  return fallback;
+}
+
+/** Traduce `deploy: "triggered" | "skipped"` en un mensaje para el operador. */
+function deployMessage(deploy: "triggered" | "skipped", subject: string): { kind: "ok" | "warn"; msg: string } {
+  return deploy === "triggered"
+    ? { kind: "ok", msg: `${subject}. Publicando en ~30 s...` }
+    : {
+        kind: "warn",
+        msg: `${subject} en la base de datos, pero no hay Deploy Hook configurado: no se redesplegará automáticamente.`,
+      };
+}
 
 export function RoutesPanel() {
   const [routes, setRoutes] = useState<RouteFile[]>([]);
@@ -43,7 +65,7 @@ export function RoutesPanel() {
     adminFetch<{ routes: RouteFile[] }>("/api/admin/routes")
       .then((r) => setRoutes(r.routes))
       .catch((e) =>
-        setStatus({ kind: "err", msg: e instanceof ApiError ? e.message : "Error cargando" })
+        setStatus({ kind: "err", msg: describeError(e, "Error cargando las rutas") })
       )
       .finally(() => setLoading(false));
   }, []);
@@ -69,7 +91,7 @@ export function RoutesPanel() {
       setEditing(r);
       setActiveLocale(r.locales.en ? "en" : "fr");
     } catch (e) {
-      setStatus({ kind: "err", msg: e instanceof ApiError ? e.message : "Error cargando" });
+      setStatus({ kind: "err", msg: describeError(e, "Error cargando la ruta") });
     }
   }
 
@@ -93,17 +115,19 @@ export function RoutesPanel() {
     setSaving(true);
     setStatus(null);
     try {
-      await adminFetch(`/api/admin/routes/${editing.slug}?locale=${activeLocale}`, {
-        method: "PUT",
-        body: { data: version.data, body: version.body },
-      });
-      setStatus({
-        kind: "ok",
-        msg: `Guardado (${activeLocale.toUpperCase()}). Vercel redesplegará en ~30 s.`,
-      });
+      // ADR-022: la respuesta ya no trae commitSha, solo { ok, deploy }.
+      const res = await adminFetch<{ ok: boolean; deploy: "triggered" | "skipped" }>(
+        `/api/admin/routes/${editing.slug}?locale=${activeLocale}`,
+        {
+          method: "PUT",
+          body: { data: version.data, body: version.body },
+        }
+      );
+      setStatus(
+        deployMessage(res.deploy, `Ruta guardada (${activeLocale.toUpperCase()})`)
+      );
     } catch (e) {
-      const err = e as ApiError;
-      setStatus({ kind: "err", msg: err.message });
+      setStatus({ kind: "err", msg: describeError(e, "Error al guardar la ruta") });
     } finally {
       setSaving(false);
     }
@@ -145,7 +169,11 @@ export function RoutesPanel() {
           <p
             role="status"
             className={`mt-4 rounded-lg px-4 py-3 text-sm ${
-              status.kind === "ok" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-700"
+              status.kind === "ok"
+                ? "bg-green-50 text-green-800"
+                : status.kind === "warn"
+                  ? "bg-amber-50 text-amber-800"
+                  : "bg-red-50 text-red-700"
             }`}
           >
             {status.msg}
@@ -175,7 +203,18 @@ export function RoutesPanel() {
     <div>
       <h2 className="font-heading text-lg font-bold">Rutas</h2>
       {status && (
-        <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{status.msg}</p>
+        <p
+          role="status"
+          className={`mt-4 rounded-lg px-4 py-3 text-sm ${
+            status.kind === "ok"
+              ? "bg-green-50 text-green-800"
+              : status.kind === "warn"
+                ? "bg-amber-50 text-amber-800"
+                : "bg-red-50 text-red-700"
+          }`}
+        >
+          {status.msg}
+        </p>
       )}
       {loading ? (
         <p className="mt-6 text-neutral-500">Cargando rutas…</p>
@@ -297,7 +336,7 @@ function RouteEditor({
             />
           </label>
           <label className={label}>
-            Imagen (ruta /public)
+            Imagen (URL o ruta /public)
             <input
               className={input}
               value={String(data.image ?? "")}

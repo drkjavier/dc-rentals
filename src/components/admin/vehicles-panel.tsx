@@ -1,7 +1,7 @@
-// src/components/admin/vehicles-panel.tsx — Pestaña "Trucks" (ADR-020)
-// Lista los trucks del repo, permite crear nuevos y editar existentes.
+// src/components/admin/vehicles-panel.tsx — Pestaña "Trucks" (ADR-020 + ADR-022)
+// Lista los trucks de Supabase, permite crear nuevos y editar existentes.
 // El formulario envía el objeto completo; el endpoint valida con vehicleSchema
-// (Zod) y SOLO commitea si la validación pasa.
+// (Zod), guarda en la tabla vehicles_catalog y dispara el Deploy Hook de Vercel.
 import { useCallback, useEffect, useState } from "react";
 import { adminFetch, ApiError } from "@/lib/admin/api-client";
 
@@ -17,11 +17,32 @@ interface VehicleSummary {
   fileName: string;
 }
 
-type Status = { kind: "ok" | "err"; msg: string } | null;
+type Status = { kind: "ok" | "warn" | "err"; msg: string } | null;
 
 const input =
   "mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/30";
 const label = "block text-sm font-medium text-neutral-700";
+
+/** Mensaje claro para el operador cuando Supabase no está en el entorno (ADR-022). */
+function describeError(err: unknown, fallback: string): string {
+  if (err instanceof ApiError) {
+    if (err.status === 503) {
+      return "Supabase no está configurado en el entorno. Define PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY y VERCEL_DEPLOY_HOOK en Vercel.";
+    }
+    return err.message;
+  }
+  return fallback;
+}
+
+/** Traduce `deploy: "triggered" | "skipped"` en un mensaje para el operador. */
+function deployMessage(deploy: "triggered" | "skipped", subject: string): { kind: "ok" | "warn"; msg: string } {
+  return deploy === "triggered"
+    ? { kind: "ok", msg: `${subject}. Publicando en ~30 s...` }
+    : {
+        kind: "warn",
+        msg: `${subject} en la base de datos, pero no hay Deploy Hook configurado: no se redesplegará automáticamente.`,
+      };
+}
 
 const VEHICLE_TYPES = [
   "CLASS_A",
@@ -47,7 +68,7 @@ export function VehiclesPanel() {
     adminFetch<{ vehicles: VehicleSummary[] }>("/api/admin/vehicles")
       .then((r) => setVehicles(r.vehicles))
       .catch((e) =>
-        setStatus({ kind: "err", msg: e instanceof ApiError ? e.message : "Error cargando" })
+        setStatus({ kind: "err", msg: describeError(e, "Error cargando los trucks") })
       )
       .finally(() => setLoading(false));
   }, []);
@@ -92,7 +113,7 @@ export function VehiclesPanel() {
       setEditing(r.vehicle);
       setIsNew(false);
     } catch (e) {
-      setStatus({ kind: "err", msg: e instanceof ApiError ? e.message : "Error cargando" });
+      setStatus({ kind: "err", msg: describeError(e, "Error cargando el truck") });
     }
   }
 
@@ -107,22 +128,24 @@ export function VehiclesPanel() {
     setStatus(null);
     try {
       const code = String(editing.internalCode).toLowerCase();
-      if (isNew) {
-        await adminFetch("/api/admin/vehicles", { method: "POST", body: editing });
-      } else {
-        await adminFetch(`/api/admin/vehicles/${code}`, { method: "PUT", body: editing });
-      }
-      setStatus({
-        kind: "ok",
-        msg: "Guardado. Vercel redesplegará en ~30 s y el truck aparecerá en el catálogo.",
-      });
+      // ADR-022: la respuesta ya no trae commitSha, solo { ok, deploy }.
+      const res = await adminFetch<{ ok: boolean; deploy: "triggered" | "skipped" }>(
+        isNew ? "/api/admin/vehicles" : `/api/admin/vehicles/${code}`,
+        isNew
+          ? { method: "POST", body: editing }
+          : { method: "PUT", body: editing }
+      );
+      setStatus(deployMessage(res.deploy, "Truck guardado"));
       setEditing(null);
       load();
-    } catch (e) {
-      const err = e as ApiError;
+    } catch (err) {
       setStatus({
         kind: "err",
-        msg: err.message + (err.details ? `\n${JSON.stringify(err.details)}` : ""),
+        msg:
+          describeError(err, "Error al guardar") +
+          (err instanceof ApiError && err.details
+            ? `\n${JSON.stringify(err.details)}`
+            : ""),
       });
     } finally {
       setSaving(false);
@@ -158,7 +181,11 @@ export function VehiclesPanel() {
         <p
           role="status"
           className={`mt-4 rounded-lg px-4 py-3 text-sm ${
-            status.kind === "ok" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-700"
+            status.kind === "ok"
+              ? "bg-green-50 text-green-800"
+              : status.kind === "warn"
+                ? "bg-amber-50 text-amber-800"
+                : "bg-red-50 text-red-700"
           }`}
         >
           {status.msg}
@@ -410,7 +437,7 @@ function VehicleForm({
             />
           </div>
           <div>
-            <label className={label} htmlFor="mainImage">Imagen principal (ruta /public)</label>
+            <label className={label} htmlFor="mainImage">Imagen principal (URL o ruta /public)</label>
             <input
               id="mainImage"
               className={input}

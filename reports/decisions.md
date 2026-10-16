@@ -82,7 +82,18 @@
 - **Fecha**: 2026-10-15
 - **Decisión**: El schema de Supabase vive en `supabase/migrations/*.sql` (fuente única de verdad) y se aplica con la **Supabase CLI** (`npm run db:push`). Se eliminan los `supabase/schema.sql` y `supabase/seed.sql` sueltos, que pasan a ser migraciones `20261015000001_init_schema.sql` y `20261015000002_seed_demo.sql`.
 - **Razón**: antes el schema era un `.sql` suelto que había que copiar/pegar manualmente en el SQL Editor (frágil, sin historial, dos posibles fuentes en conflicto). Con migraciones versionadas el cambio de schema es reproducible, auditable y de un solo comando. Consistente con AGENTS.md ("solo migraciones additive"): las migraciones son append-only, no se editan tras aplicarse.
-- **Herramienta**: `supabase` CLI como devDependency (`^2.121.0`), no global. Scripts npm: `db:login`, `db:link` (project ref `towodmbmszrsbirsjzdj`), `db:push`, `db:push:direct` (conexión directa vía driver `pg`, ADR-021), `db:reset` (solo local), `db:status`.
-- **Config**: `supabase/config.toml` (project_id `dc-rentals`).
-- **Bug corregido**: el schema original usaba `create type if not exists ... as enum`, **no válido en PostgreSQL** (CREATE TYPE no acepta IF NOT EXISTS); se reemplaza por el patrón idempotente `DO + exception duplicate_object`. Ese schema habría fallado incluso en el SQL Editor.
-- **Verificado**: schema aplicado a la BD hosted (7 tablas), calendario leyendo `availability_blocks` en vivo.
+- **Herramienta**: `supabase` CLI como devDependency (`^2.121.0`), no global. Scripts npm: `db:login`, `db:link` (project ref `towodmbmszrsbirsjzdj`), `db:push`, `db:reset` (solo local), `db:status`.
+- **Config**: `supabase/config.toml` (project_id `dc-rentals`, major_version 15 para entorno local).
+- **Verificado**: CLI operativa (`npx supabase db push --help` OK), `package.json` JSON válido, migraciones creadas.
+
+## ADR-022: El panel de administración migra de GitHub a Supabase (reemplaza el backend de ADR-020)
+
+- **Fecha**: 2026-10-15
+- **Decisión**: El backend de almacenamiento del panel `/admin` pasa de la GitHub Contents API a **Supabase** (tablas `vehicles_catalog`, `routes_catalog`, `site_config` + Storage bucket `admin-images`). Tras cada guardado exitoso el endpoint hace un POST al **Deploy Hook de Vercel** (`VERCEL_DEPLOY_HOOK`), que redespliega el sitio SSG (~30 s) leyendo el catálogo desde la DB en build time. `GITHUB_TOKEN`/`GITHUB_REPO`/`GITHUB_BRANCH` dejan de ser necesarias.
+- **Contexto**: el usuario operador no quería dependencia de un PAT de GitHub; Supabase ya es la DB operativa del proyecto (ADR-003, ADR-021) y el panel debe conectar con ella.
+- **Alcance**: se migran solo los contenidos que edita el panel (trucks, rutas EN/FR, branding). La **FAQ se queda en Content Collections** (no la gestiona el panel). Los archivos seed en `src/content/` y `src/config/site-config.json` permanecen en el repo como **fallback de build** si no hay env vars de Supabase (conserva el ADR-014 y mantiene el build verde sin credenciales).
+- **Modelo de publicación**: se mantiene **SSG** (ADR-010 intacto). Flujo: panel → validación Zod → upsert en Supabase → Deploy Hook → build lee catálogo de DB → producción. Sin DB configurada en build, el catálogo se lee de los archivos seed.
+- **Endpooints**: mismos 6 endpoints y mismas rutas/verbos que ADR-020, pero escribiendo a Supabase. Cambios de contrato: las respuestas sustituyen `commitSha` por `deploy: "triggered" | "skipped"`, y `POST /api/admin/upload` devuelve la **URL pública** de Storage (`url`) en lugar de un path local.
+- **Env vars**: nuevas `VERCEL_DEPLOY_HOOK` (opcional; sin ella `deploy=skipped`); eliminadas `GITHUB_*`. `ADMIN_TOKEN` y las de Supabase siguen siendo obligatorias; todas server-only (nunca `PUBLIC_*`).
+- **Seguridad**: RLS en las 3 tablas (SELECT público anónimo, escritura solo service role sin policy); bucket `admin-images` público en lectura, escritura solo service role; validación Zod antes de cualquier escritura (400 sin side effects); límite de 1 MB y allowlist de extensiones en uploads; `/admin` sigue con `noindex,nofollow` y auth timing-safe.
+- **Known limitations**: un guardado dispara un build de Vercel por cambio (sin batching); el contenido editado no es visible hasta que termine el redespliegue (~30 s); el catálogo en DB y los archivos seed pueden divergir (resincronizables con `npm run seed:catalog`).

@@ -1,27 +1,34 @@
-// src/pages/api/admin/site-config.ts — ADR-020
-// GET: devuelve el config actual (leído del repo vía GitHub).
-// PUT: valida con Zod y commitea src/config/site-config.json.
+// src/pages/api/admin/site-config.ts — ADR-020 + ADR-022
+// GET: devuelve el config actual (singleton site_config en Supabase).
+// PUT: valida con Zod y hace upsert del singleton.
 import type { APIRoute } from "astro";
-import { requireAdmin, json } from "@/lib/admin/guard";
-import { getFile, putFile } from "@/lib/admin/github";
+import { requireAdmin, json, databaseNotConfigured } from "@/lib/admin/guard";
+import { getSiteConfigRow, putSiteConfig } from "@/lib/admin/catalog-db";
+import { triggerDeployHook } from "@/lib/admin/deploy";
 import { siteConfigSchema } from "@/lib/site-config";
+import { isSupabaseConfigured } from "@/lib/supabase";
 
 export const prerender = false;
-
-const PATH = "src/config/site-config.json";
 
 export const GET: APIRoute = async (context) => {
   const guard = requireAdmin(context);
   if (!guard.ok) return guard.response;
+  if (!isSupabaseConfigured()) return databaseNotConfigured();
 
-  const file = await getFile(guard.github, PATH);
-  if (!file.ok) return json({ error: file.error }, file.status);
-  return json({ config: JSON.parse(file.data) });
+  const config = await getSiteConfigRow();
+  if (!config) {
+    return json(
+      { error: "No hay site_config en la base de datos (o es inválido)." },
+      404
+    );
+  }
+  return json({ config });
 };
 
 export const PUT: APIRoute = async (context) => {
   const guard = requireAdmin(context);
   if (!guard.ok) return guard.response;
+  if (!isSupabaseConfigured()) return databaseNotConfigured();
 
   let body: unknown;
   try {
@@ -32,20 +39,23 @@ export const PUT: APIRoute = async (context) => {
 
   const parsed = siteConfigSchema.safeParse(body);
   if (!parsed.success) {
-    // 400 con errores de Zod — NO se commitea nada
+    // 400 con errores de Zod — NO se escribe nada
     return json(
       { error: "VALIDATION_FAILED", details: parsed.error.flatten() },
       400
     );
   }
 
-  const content = `${JSON.stringify(parsed.data, null, 2)}\n`;
-  const result = await putFile(
-    guard.github,
-    PATH,
-    content,
+  const saved = await putSiteConfig(parsed.data);
+  if (!saved) {
+    return json(
+      { error: "WRITE_FAILED", message: "No se pudo guardar el config en site_config." },
+      500
+    );
+  }
+
+  const { triggered } = await triggerDeployHook(
     "chore(site): update site config (logo/hero/branding)"
   );
-  if (!result.ok) return json({ error: result.error }, result.status);
-  return json({ ok: true, commitSha: result.data.commitSha });
+  return json({ ok: true, deploy: triggered ? "triggered" : "skipped" });
 };

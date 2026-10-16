@@ -1,6 +1,7 @@
-// src/components/admin/config-panel.tsx — Pestaña "Configuración" (ADR-020)
-// Edita src/config/site-config.json: branding, logo (icono o imagen) e
-// imagen panorámica del hero. Sube imágenes a public/images/admin/....
+// src/components/admin/config-panel.tsx — Pestaña "Configuración" (ADR-020 + ADR-022)
+// Edita el singleton site_config en Supabase: branding, logo (icono o imagen)
+// e imagen panorámica del hero. Las imágenes se suben al bucket Storage
+// `admin-images` y se guarda su URL pública.
 import { useEffect, useState, type ChangeEvent } from "react";
 import {
   adminFetch,
@@ -35,11 +36,27 @@ const ICON_OPTIONS = [
 const input =
   "mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/30";
 
+/** Mensaje claro para el operador cuando Supabase no está en el entorno (ADR-014 + ADR-022). */
+function describeError(err: unknown, fallback: string): string {
+  if (err instanceof ApiError) {
+    // 503 = DATABASE_NOT_CONFIGURED (único 503 del backend): el operador necesita
+    // saber qué variables definir en Vercel.
+    if (err.status === 503) {
+      return "Supabase no está configurado en el entorno. Define PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY y VERCEL_DEPLOY_HOOK en Vercel.";
+    }
+    return err.message;
+  }
+  return fallback;
+}
+
 export function ConfigPanel() {
   const [config, setConfig] = useState<SiteConfig>(EMPTY);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+  const [status, setStatus] = useState<{
+    kind: "ok" | "warn" | "err";
+    msg: string;
+  } | null>(null);
 
   useEffect(() => {
     adminFetch<{ config: SiteConfig }>("/api/admin/site-config")
@@ -47,10 +64,7 @@ export function ConfigPanel() {
       .catch((e) =>
         setStatus({
           kind: "err",
-          msg:
-            e instanceof ApiError
-              ? e.message
-              : "No se pudo cargar la configuración",
+          msg: describeError(e, "No se pudo cargar la configuración"),
         })
       )
       .finally(() => setLoading(false));
@@ -70,20 +84,25 @@ export function ConfigPanel() {
     setStatus(null);
     try {
       const base64 = await fileToBase64(file);
-      const res = await adminFetch<{ path: string }>("/api/admin/upload", {
+      // ADR-022: la respuesta trae la URL PÚBLICA de Storage (`url`); ya no
+      // hay campo `path`. Se guarda la URL completa en el config.
+      const res = await adminFetch<{ url: string }>("/api/admin/upload", {
         method: "POST",
         body: { name: file.name, dataBase64: base64 },
       });
       if (target === "logo") {
-        update("logo", { ...config.logo, type: "image", image: res.path });
+        update("logo", { ...config.logo, type: "image", image: res.url });
       } else {
-        update("hero", { ...config.hero, image: res.path });
+        update("hero", { ...config.hero, image: res.url });
       }
-      setStatus({ kind: "ok", msg: `Imagen subida: ${res.path}` });
+      setStatus({
+        kind: "ok",
+        msg: `Imagen subida: ${res.url} — recuerda pulsar "Guardar cambios" para aplicarla.`,
+      });
     } catch (err) {
       setStatus({
         kind: "err",
-        msg: err instanceof ApiError ? err.message : "Error al subir la imagen",
+        msg: describeError(err, "Error al subir la imagen"),
       });
     }
   }
@@ -92,15 +111,25 @@ export function ConfigPanel() {
     setSaving(true);
     setStatus(null);
     try {
-      await adminFetch("/api/admin/site-config", { method: "PUT", body: config });
-      setStatus({
-        kind: "ok",
-        msg: "Guardado. Vercel redesplegará en ~30 s y los cambios aparecerán en producción.",
-      });
+      const res = await adminFetch<{ ok: boolean; deploy: "triggered" | "skipped" }>(
+        "/api/admin/site-config",
+        { method: "PUT", body: config }
+      );
+      if (res.deploy === "triggered") {
+        setStatus({
+          kind: "ok",
+          msg: "Cambios guardados. Publicando en ~30 s...",
+        });
+      } else {
+        setStatus({
+          kind: "warn",
+          msg: "Cambios guardados en la base de datos, pero no hay Deploy Hook configurado: no se redesplegará automáticamente.",
+        });
+      }
     } catch (err) {
       setStatus({
         kind: "err",
-        msg: err instanceof ApiError ? err.message : "Error al guardar",
+        msg: describeError(err, "Error al guardar"),
       });
     } finally {
       setSaving(false);
@@ -302,7 +331,9 @@ export function ConfigPanel() {
           className={`rounded-lg px-4 py-3 text-sm ${
             status.kind === "ok"
               ? "bg-green-50 text-green-800"
-              : "bg-red-50 text-red-700"
+              : status.kind === "warn"
+                ? "bg-amber-50 text-amber-800"
+                : "bg-red-50 text-red-700"
           }`}
         >
           {status.msg}
