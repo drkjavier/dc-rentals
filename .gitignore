@@ -30,3 +30,5 @@ test-results/
 # vercel
 .vercel/
 supabase/.temp/
+.vercel
+.env*
