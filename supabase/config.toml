@@ -1,0 +1,23 @@
+# supabase/config.toml — Config del proyecto Supabase (ADR-021)
+# Usado por la Supabase CLI para link + `npm run db:push`.
+# project_id = nombre local del proyecto (no es el project ref).
+
+project_id = "dc-rentals"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+# Versión mayor de PostgreSQL del entorno LOCAL (supabase start).
+# En el proyecto hosted no afecta a `db push`.
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323

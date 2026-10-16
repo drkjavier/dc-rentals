@@ -76,3 +76,13 @@
 - **Borrado físico de trucks no soportado a propósito**: se ocultan con `active=false` para no romper enlaces ni perder historial.
 - **Known limitations**: sin rate limiting ni 2FA (mitigable con un proxy/Cloudflare Access); sin upload de imágenes >1 MB; el commit va directo a main (no usa PRs).
 - **Verificación**: build OK (`nodejs22.x`), 117 tests OK, `astro check` 0 errores, eslint limpio.
+
+## ADR-021: Schema de Supabase como migraciones versionadas (Supabase CLI)
+
+- **Fecha**: 2026-10-15
+- **Decisión**: El schema de Supabase vive en `supabase/migrations/*.sql` (fuente única de verdad) y se aplica con la **Supabase CLI** (`npm run db:push`). Se eliminan los `supabase/schema.sql` y `supabase/seed.sql` sueltos, que pasan a ser migraciones `20261015000001_init_schema.sql` y `20261015000002_seed_demo.sql`.
+- **Razón**: antes el schema era un `.sql` suelto que había que copiar/pegar manualmente en el SQL Editor (frágil, sin historial, dos posibles fuentes en conflicto). Con migraciones versionadas el cambio de schema es reproducible, auditable y de un solo comando. Consistente con AGENTS.md ("solo migraciones additive"): las migraciones son append-only, no se editan tras aplicarse.
+- **Herramienta**: `supabase` CLI como devDependency (`^2.121.0`), no global. Scripts npm: `db:login`, `db:link` (project ref `towodmbmszrsbirsjzdj`), `db:push`, `db:push:direct` (conexión directa vía driver `pg`, ADR-021), `db:reset` (solo local), `db:status`.
+- **Config**: `supabase/config.toml` (project_id `dc-rentals`).
+- **Bug corregido**: el schema original usaba `create type if not exists ... as enum`, **no válido en PostgreSQL** (CREATE TYPE no acepta IF NOT EXISTS); se reemplaza por el patrón idempotente `DO + exception duplicate_object`. Ese schema habría fallado incluso en el SQL Editor.
+- **Verificado**: schema aplicado a la BD hosted (7 tablas), calendario leyendo `availability_blocks` en vivo.

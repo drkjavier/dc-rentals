@@ -207,9 +207,9 @@ dc-rentals/
 ├── package.json
 │
 ├── supabase/
-│   ├── schema.sql                # Schema SQL (tablas + RLS + índices)
-│   ├── seed.sql                  # Datos iniciales (bloques de disponibilidad)
-│   └── migrations/               # Migraciones versionadas (SQL)
+│   ├── migrations/               # Migraciones versionadas (fuente de verdad, ADR-021)
+│   ├── config.toml               # Config de la Supabase CLI
+│   └── README.md                 # Flujo de migraciones (db:push)
 │
 ├── public/
 │   ├── fonts/                    # Inter, Plus Jakarta Sans, JetBrains Mono
@@ -2296,7 +2296,7 @@ release/v1.0.0
 ### 17.3 Supabase — plan gratuito
 
 - **Free tier**: 500 MB de base de datos, 5 GB egress/mes, 2 proyectos, backups de 7 días (sin PITR).
-- **Setup inicial**: crear proyecto → ejecutar `supabase/schema.sql` en el SQL Editor → copiar URL, anon key y service role key al `.env` y a las env vars de Vercel.
+- **Setup inicial**: crear proyecto → `npm run db:login` + `npm run db:link` (una vez) → `npm run db:push` (aplica `supabase/migrations/`, ADR-021) → copiar URL, anon key y service role key al `.env` y a las env vars de Vercel.
 - **Sin connection pooling issues**: `@supabase/supabase-js` usa HTTP (PostgREST), no conexiones directas de Postgres — sin problemas de pgbouncer en serverless.
 
 ### 17.4 GitHub Actions (CI)

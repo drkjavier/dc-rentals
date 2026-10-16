@@ -104,7 +104,7 @@ dc-rentals/
 │   ├── hooks/             # React hooks (web-dev)
 │   └── content/           # Content Collections (data-ops)
 ├── supabase/
-│   └── schema.sql         # ⚠️ solo migraciones additive
+│   └── migrations/        # ⚠️ solo migraciones additive (Supabase CLI, ADR-021)
 ├── tests/
 │   ├── unit/              # (data-ops)
 │   └── e2e/               # (data-ops)

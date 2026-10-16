@@ -2,11 +2,20 @@
 -- Ejecutar en el SQL Editor de Supabase (plan Free).
 
 -- ─── Enums ───────────────────────────────────────────────
-create type if not exists availability_block_type as enum
-  ('RESERVATION', 'MAINTENANCE', 'BLOCKED', 'COMING_SOON');
+-- Nota (ADR-021): `create type if not exists ... as enum` NO es SQL válido
+-- en PostgreSQL (CREATE TYPE no acepta IF NOT EXISTS). Se usa el patrón
+-- idempotente DO + exception duplicate_object.
+do $$ begin
+  create type availability_block_type as enum
+    ('RESERVATION', 'MAINTENANCE', 'BLOCKED', 'COMING_SOON');
+exception when duplicate_object then null;
+end $$;
 
-create type if not exists reservation_status as enum
-  ('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW');
+do $$ begin
+  create type reservation_status as enum
+    ('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW');
+exception when duplicate_object then null;
+end $$;
 
 -- ─── availability_blocks ─────────────────────────────────
 -- Nota: vehicle_id guarda el internalCode del vehículo en Content Collections
